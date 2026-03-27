@@ -1,4 +1,5 @@
 import { Toaster } from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 import {
   PersonStanding,
   ScaleIcon,
@@ -23,6 +24,7 @@ const goalOptions = [
 const Onboarding = () => {
   const [step, setStep] = useState(1);
   const { setOnboardingCompleted, setUser } = useAppContext();
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState<ProfileFormData>({
     age: 0,
@@ -82,8 +84,9 @@ const Onboarding = () => {
       setUser(userData);
       toast.dismiss();
 
-      toast.success("Profile created successfully 🚀");
+      //toast.success("Profile created successfully 🚀");
       setOnboardingCompleted(true);
+      navigate("/", { replace: true });
     }
   };
 
