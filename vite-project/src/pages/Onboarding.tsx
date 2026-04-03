@@ -1,5 +1,6 @@
 import { Toaster } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
+import api from "../configs/api";
 import {
   PersonStanding,
   ScaleIcon,
@@ -66,7 +67,7 @@ const Onboarding = () => {
     return true;
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (!validateStep()) return;
 
     if (step < totalSteps) {
@@ -80,13 +81,16 @@ const Onboarding = () => {
 
       localStorage.setItem("fitnessUser", JSON.stringify(userData));
 
-      // 🔥 IMPORTANT: set user in context
-      setUser(userData);
-      toast.dismiss();
-
-      //toast.success("Profile created successfully 🚀");
-      setOnboardingCompleted(true);
-      navigate("/", { replace: true });
+      try {
+        await api.put(`/api/users/$(user?.id)`, userData)
+        toast.success("Profile created successfully 🚀");
+        setOnboardingCompleted(true);
+        navigate("/", { replace: true });
+        
+      } catch (error: any) {
+        toast.error(error.message)
+        
+      }
     }
   };
 

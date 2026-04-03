@@ -11,26 +11,41 @@ import Onboarding from "./pages/Onboarding"
 import { Toaster }  from "react-hot-toast"
 
 const App = () => {
-  // App.tsx
-  const { user, OnboardingCompleted, setUser,setOnboardingCompleted } =
-    useAppContext();
+  const { user, OnboardingCompleted } = useAppContext();
 
+  // 1. If there is no user, show the Login page
+  if (!user) {
+    return (
+      <>
+        <Toaster />
+        <Login />
+      </>
+    );
+  }
+
+  // 2. If user exists but hasn't finished onboarding, show Onboarding
+  if (!OnboardingCompleted) {
+    return (
+      <>
+        <Toaster />
+        <Onboarding />
+      </>
+    );
+  }
+
+  // 3. If authenticated AND onboarded, show the main App
   return (
     <>
       <Toaster />
-      {!OnboardingCompleted ? (
-        <Onboarding />
-      ) : (
-        <Routes>
-          <Route path="/" element={<Layout />}>
-            <Route index element={<DashBoard />} />
-            <Route path="food" element={<FoodLog />} />
-            <Route path="activity" element={<ActivityLog />} />
-            <Route path="profile" element={<Profile />} />
-          </Route>
-        </Routes>
-      )}
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          <Route index element={<DashBoard />} />
+          <Route path="food" element={<FoodLog />} />
+          <Route path="activity" element={<ActivityLog />} />
+          <Route path="profile" element={<Profile />} />
+        </Route>
+      </Routes>
     </>
   );
-};;
+};
 export default App;

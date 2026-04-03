@@ -1,6 +1,7 @@
 // src/types/index.ts
 
 export interface UserData {
+  username: string;
   name: string;
   age: number;
   weight: number;
@@ -23,12 +24,14 @@ export interface FoodEntry {
 
 export interface ActivityEntry {
   id: number;
-  documentId: string;
-  name: string;
-  duration: number;
-  calories: number;
-  date: string;
-  createdAt: string;
+  attributes: {
+    name: string;
+    duration: number;
+    caloriesBurned: number;
+    date: string;
+    createdAt: string;
+    updatedAt: string;
+  };
 }
 
 export interface Credentials {

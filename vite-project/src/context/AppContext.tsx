@@ -21,13 +21,12 @@ interface AppContextType {
   setOnboardingCompleted: React.Dispatch<React.SetStateAction<boolean>>;
   allFoodLogs: FoodEntry[];
   allActivityLogs: ActivityEntry[];
-  addFoodLog: (
-    entry: Omit<FoodEntry, "id" | "documentId" | "createdAt">,
-  ) => Promise<void>;
-  deleteFoodLog: (id: string) => Promise<void>;
-  addActivityLog: (
-    entry: Omit<ActivityEntry, "id" | "documentId" | "createdAt">,
-  ) => Promise<void>;
+  // ADD THIS LINE TO FIX THE ERROR
+  setAllActivityLogs: React.Dispatch<React.SetStateAction<ActivityEntry[]>>;
+  addFoodLog: (entry: any) => Promise<void>;
+  deleteFoodLog: (id: string | number) => Promise<void>;
+  addActivityLog: (entry: any) => Promise<void>;
+  deleteActivityLog: (id: string | number) => Promise<void>; // Added for completeness
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -152,12 +151,26 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       toast.error("Failed to add activity");
     }
   };
-
-  const deleteFoodLog = async (id: string) => {
+  const deleteFoodLog = async (id: string | number) => {
     try {
+      // Strapi endpoint for deleting a specific entry
       await api.delete(`/api/food-logs/${id}`);
+
+      // Update local state by filtering out the deleted ID
       setAllFoodLogs((prev) => prev.filter((item: any) => item.id !== id));
-      toast.success("Entry Deleted");
+
+      toast.success("Food entry removed");
+    } catch (error) {
+      console.error("Delete Food Error:", error);
+      toast.error("Failed to delete entry");
+    }
+  };
+
+  const deleteActivityLog = async (id: string | number) => {
+    try {
+      await api.delete(`/api/activity-logs/${id}`);
+      setAllActivityLogs((prev) => prev.filter((item) => item.id !== id));
+      toast.success("Activity Deleted");
     } catch (error) {
       toast.error("Delete failed");
     }
@@ -187,9 +200,11 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     setOnboardingCompleted,
     allFoodLogs,
     allActivityLogs,
+    setAllActivityLogs, // PASS IT HERE
     addFoodLog,
     deleteFoodLog,
     addActivityLog,
+    deleteActivityLog,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

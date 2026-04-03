@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   User,
@@ -9,52 +9,53 @@ import {
   Save,
   LogOut,
   CheckCircle2,
+  Loader2,
 } from "lucide-react";
+import { useAppContext } from "../context/AppContext";
+import api from "../configs/api";
+import { toast } from "react-hot-toast";
 
 const Profile = () => {
+  const { user, setUser, logout, allFoodLogs, allActivityLogs } =
+    useAppContext();
   const [isEditing, setIsEditing] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSavedMessage, setShowSavedMessage] = useState(false);
 
-  // 1. Load data from LocalStorage on start, or use defaults
-  const [stats, setStats] = useState(() => {
-    const saved = localStorage.getItem("user-stats");
-    return saved
-      ? JSON.parse(saved)
-      : {
-          age: 21,
-          weight: 65,
-          height: 180,
-          goal: "Gain Muscle",
-        };
+  // Initialize local state from the Global User Context
+  const [stats, setStats] = useState({
+    age: user?.age || 21,
+    weight: user?.weight || 65,
+    height: user?.height || 180,
+    goal: user?.goal || "maintain",
   });
 
-  // 2. Function to handle the Save button
-  const handleSave = () => {
-    setIsEditing(false);
-    localStorage.setItem("user-stats", JSON.stringify(stats));
+  const handleSave = async () => {
+    setIsSubmitting(true);
+    try {
+      // Strapi endpoint to update the current logged-in user
+      const { data } = await api.put("/api/users-permissions/users/me", stats);
 
-    // Show a "Saved" feedback message
-    setShowSavedMessage(true);
-    setTimeout(() => setShowSavedMessage(false), 3000);
-    };
-    const handleLogout = () => {
-      // Clear the specific user data from localStorage
-      localStorage.removeItem("user-stats");
+      // Update Global Context so the whole app knows the new stats
+      setUser({ ...user, ...data });
 
-      // If you have an auth token later, you'd clear it here:
-      // localStorage.removeItem('token');
-
-      // 2. Redirect to the login page
-      // We use window.location.href for a full refresh to the login route
-      window.location.href = "/login";
-    };
+      setIsEditing(false);
+      setShowSavedMessage(true);
+      setTimeout(() => setShowSavedMessage(false), 3000);
+      toast.success("Profile synced with cloud!");
+    } catch (error) {
+      toast.error("Failed to update profile");
+      console.error(error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="p-6 bg-[#0B1221] min-h-screen text-white font-sans">
       <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-2 space-y-4">
           <div className="bg-[#111827] border border-slate-800 p-6 rounded-3xl relative overflow-hidden">
-            {/* Success Toast Notification */}
             <AnimatePresence>
               {showSavedMessage && (
                 <motion.div
@@ -74,10 +75,10 @@ const Profile = () => {
               </div>
               <div>
                 <h2 className="text-xl font-bold tracking-tight">
-                  Your Profile
+                  {user?.username || "Your Profile"}
                 </h2>
                 <p className="text-slate-500 text-sm">
-                  Managing your fitness goals
+                  NIT Jamshedpur Fitness Journey
                 </p>
               </div>
             </div>
@@ -88,21 +89,21 @@ const Profile = () => {
                 label="Age"
                 value={stats.age}
                 isEditing={isEditing}
-                onChange={(v) => setStats({ ...stats, age: v })}
+                onChange={(v) => setStats({ ...stats, age: Number(v) })}
               />
               <ProfileInput
                 icon={<Weight size={18} />}
                 label="Weight (kg)"
                 value={stats.weight}
                 isEditing={isEditing}
-                onChange={(v) => setStats({ ...stats, weight: v })}
+                onChange={(v) => setStats({ ...stats, weight: Number(v) })}
               />
               <ProfileInput
                 icon={<Ruler size={18} />}
                 label="Height (cm)"
                 value={stats.height}
                 isEditing={isEditing}
-                onChange={(v) => setStats({ ...stats, height: v })}
+                onChange={(v) => setStats({ ...stats, height: Number(v) })}
               />
 
               <div className="flex items-center gap-4 bg-[#1F2937]/30 p-4 rounded-2xl border border-slate-800/50">
@@ -113,33 +114,37 @@ const Profile = () => {
                   </p>
                   {isEditing ? (
                     <select
-                      className="bg-[#111827] text-white font-bold outline-none w-full border border-slate-700 rounded-lg p-1"
+                      className="bg-[#111827] text-white font-bold outline-none w-full border border-slate-700 rounded-lg p-1 capitalize"
                       value={stats.goal}
                       onChange={(e) =>
-                        setStats({ ...stats, goal: e.target.value })
+                        setStats({ ...stats, goal: e.target.value as any })
                       }
                     >
-                      <option value="Gain Muscle">Gain Muscle</option>
-                      <option value="Fat Loss">Fat Loss</option>
-                      <option value="Maintenance">Maintenance</option>
+                      <option value="gain">Gain Muscle</option>
+                      <option value="lose">Fat Loss</option>
+                      <option value="maintain">Maintenance</option>
                     </select>
                   ) : (
-                    <p className="font-bold text-emerald-400">{stats.goal}</p>
+                    <p className="font-bold text-emerald-400 capitalize">
+                      {stats.goal}
+                    </p>
                   )}
                 </div>
               </div>
             </div>
 
-            {/* THE DYNAMIC BUTTON */}
             <button
               onClick={isEditing ? handleSave : () => setIsEditing(true)}
+              disabled={isSubmitting}
               className={`w-full mt-8 py-4 rounded-2xl font-black transition-all flex items-center justify-center gap-2 border shadow-lg ${
                 isEditing
                   ? "bg-emerald-500 text-[#0B1221] border-emerald-400 hover:bg-emerald-400"
                   : "bg-slate-800 text-white border-slate-700 hover:bg-slate-700"
               }`}
             >
-              {isEditing ? (
+              {isSubmitting ? (
+                <Loader2 className="animate-spin" />
+              ) : isEditing ? (
                 <>
                   <Save size={20} /> SAVE SETTINGS
                 </>
@@ -152,21 +157,25 @@ const Profile = () => {
           </div>
         </div>
 
-        {/* Side Stats */}
+        {/* Real Dynamic Stats */}
         <div className="space-y-4">
           <div className="bg-[#111827] border border-slate-800 p-6 rounded-3xl">
             <h3 className="font-black text-xs uppercase tracking-[0.2em] text-slate-500 mb-4">
-              Quick Stats
+              Lifetime Activity
             </h3>
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-[#0B1221] p-4 rounded-2xl border border-slate-800/50 text-center">
-                <p className="text-2xl font-black text-emerald-500">0</p>
+                <p className="text-2xl font-black text-emerald-500">
+                  {allFoodLogs.length}
+                </p>
                 <p className="text-[9px] text-slate-600 uppercase font-bold">
-                  Foods
+                  Meals
                 </p>
               </div>
               <div className="bg-[#0B1221] p-4 rounded-2xl border border-slate-800/50 text-center">
-                <p className="text-2xl font-black text-blue-500">2</p>
+                <p className="text-2xl font-black text-blue-500">
+                  {allActivityLogs.length}
+                </p>
                 <p className="text-[9px] text-slate-600 uppercase font-bold">
                   Workouts
                 </p>
@@ -174,7 +183,7 @@ const Profile = () => {
             </div>
           </div>
           <button
-            onClick={handleLogout}
+            onClick={logout}
             className="w-full py-4 bg-red-500/5 hover:bg-red-500/10 text-red-500/80 rounded-2xl font-bold border border-red-500/10 transition-colors flex items-center justify-center gap-2"
           >
             <LogOut size={18} /> Logout
@@ -185,7 +194,7 @@ const Profile = () => {
   );
 };
 
-// Fixed TypeScript Props for the Input Component
+// ... ProfileInput stays mostly the same but ensure value is handled as string/number ...
 interface ProfileInputProps {
   icon: React.ReactNode;
   label: string;

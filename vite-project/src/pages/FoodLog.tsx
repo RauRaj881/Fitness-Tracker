@@ -89,6 +89,7 @@ const FoodLog = () => {
     setFormData({ ...formData, mealType: type });
     setIsAdding(true);
   };
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async () => {
     if (!formData.name || !formData.calories) {
@@ -96,6 +97,7 @@ const FoodLog = () => {
       return;
     }
 
+    setIsSaving(true); // Disable button while saving
     try {
       await addFoodLog({
         name: formData.name,
@@ -105,18 +107,48 @@ const FoodLog = () => {
       });
       setIsAdding(false);
       setFormData({ name: "", calories: "", mealType: "breakfast" });
-      toast.success(`${formData.name} added!`);
     } catch (err) {
-      // Error is handled by context toast
+      // Error handled by context
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  const handleAiSnap = () => {
-    toast.loading("Scanning plate...", { id: "ai-snap" });
-    setTimeout(() => {
-      toast.success("Detected: Greek Salad (~240 kcal)", { id: "ai-snap" });
-    }, 1500);
+  const handleAiSnap = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const toastId = toast.loading("Analyzing your plate... 🥗");
+
+    try {
+      // SIMULATION: In a real app, you'd send 'file' to Gemini or OpenAI here
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      const mockDetection = {
+        name: "Chicken Salad Bowl",
+        calories: 450,
+        mealType: "lunch" as const,
+      };
+
+      // Auto-fill the form with AI results
+      setFormData({
+        name: mockDetection.name,
+        calories: mockDetection.calories,
+        mealType: mockDetection.mealType,
+      });
+
+      toast.success(
+        `Detected: ${mockDetection.name} (~${mockDetection.calories} kcal)`,
+        { id: toastId },
+      );
+
+      // Open the modal so the user can verify and "Save"
+      setIsAdding(true);
+    } catch (err) {
+      toast.error("AI Scan failed. Please enter manually.", { id: toastId });
+    }
   };
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   return (
     <div className="min-h-screen bg-[#0B1221] p-4 md:p-8 text-slate-200">
@@ -223,11 +255,13 @@ const FoodLog = () => {
               <Plus size={20} strokeWidth={3} /> ADD FOOD
             </button>
             <button
-              onClick={handleAiSnap}
+              type="button"
+              // This small arrow function fixes the Type Error!
+              onClick={() => fileInputRef.current?.click()}
               className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-white py-4 rounded-2xl font-bold transition-all"
             >
-              <Zap size={18} className="text-yellow-400 fill-yellow-400" /> AI
-              SCAN
+              <Zap size={18} className="text-yellow-400 fill-yellow-400" />
+              AI SCAN
             </button>
           </div>
         </aside>
