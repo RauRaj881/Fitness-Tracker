@@ -1,0 +1,16 @@
+# Ignore all node_modules in any subfolder
+**/node_modules/
+
+# Ignore environment secrets
+**/.env
+
+# Ignore Strapi temp files
+**/.tmp/
+**/.cache/
+
+# Ignore the SQLite database file
+**/data.db
+
+# Ignore build outputs
+**/dist/
+**/build/
