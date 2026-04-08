@@ -13,7 +13,7 @@ interface AppContextType {
   user: User | null;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
   isUserFetched: boolean;
-  fetchUser: (token: string) => Promise<void>;
+  fetchUser: (token: string) => Promise<any>;
   signup: (credentials: Credentials) => Promise<void>;
   login: (credentials: Credentials) => Promise<void>;
   logout: () => void;
@@ -21,7 +21,6 @@ interface AppContextType {
   setOnboardingCompleted: React.Dispatch<React.SetStateAction<boolean>>;
   allFoodLogs: FoodEntry[];
   allActivityLogs: ActivityEntry[];
-  // ADD THIS LINE TO FIX THE ERROR
   setAllActivityLogs: React.Dispatch<React.SetStateAction<ActivityEntry[]>>;
   addFoodLog: (entry: any) => Promise<void>;
   deleteFoodLog: (id: string | number) => Promise<void>;
@@ -77,7 +76,10 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       checkOnboarding(data.user);
 
       // Load user data immediately
-      await Promise.all([fetchFoodLogs(), fetchActivityLogs()]);
+      await Promise.all([
+        fetchFoodLogs(data.user.id),
+        fetchActivityLogs(data.user.id),
+      ]);
       toast.success("Welcome back!");
     } catch (error: any) {
       toast.error(
@@ -92,6 +94,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       const { data } = await api.get("/api/users/me");
       setUser({ ...data, token });
       checkOnboarding(data);
+      return data;
     } catch (error) {
       logout(); // Token expired or invalid
     } finally {
@@ -100,57 +103,103 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem("token");
-    delete api.defaults.headers.common["Authorization"];
-    setUser(null);
-    setOnboardingCompleted(false);
-    setAllFoodLogs([]);
-    setAllActivityLogs([]);
-    navigate("/");
+    localStorage.clear();
+    // This wipes the React memory and takes them to the login page
+    window.location.href = "/login";
   };
 
   // --- Data Fetching ---
-  const fetchFoodLogs = async () => {
+  const fetchFoodLogs = async (userId?: string | number) => {
+    const id = userId || user?.id;
+    if (!id) return;
     try {
-      const { data } = await api.get("/api/food-logs");
-      // Mapping for Strapi v4/v5 data structure
-      setAllFoodLogs(data.data || data);
+      const { data } = await api.get(
+        `/api/food-logs?populate=*&filters[users_permissions_user][id][$eq]=${id}`, // ✅
+      );
+      setAllFoodLogs(data.data);
     } catch (error) {
       console.error("Fetch Food Error:", error);
     }
   };
 
-  const fetchActivityLogs = async () => {
+  const fetchActivityLogs = async (userId?: string | number) => {
+    const id = userId || user?.id;
+    if (!id) { return; }
     try {
-      const { data } = await api.get("/api/activity-logs");
-      setAllActivityLogs(data.data || data);
+      const { data } = await api.get(
+        `/api/activity-logs?populate=*&filters[user][id][$eq]=${id}`,
+      );
+      setAllActivityLogs(data.data || []);
     } catch (error) {
       console.error("Fetch Activity Error:", error);
     }
   };
-
-  // --- CRUD Operations ---
   const addFoodLog = async (entry: any) => {
     try {
-      const payload = { data: { ...entry, publishedAt: new Date() } };
-      const { data } = await api.post("/api/food-logs", payload);
-      setAllFoodLogs((prev) => [data.data || data, ...prev]);
-      toast.success("Food Logged");
-    } catch (error) {
-      toast.error("Failed to add food");
+      const payload = {
+        data: {
+          name: String(entry.name),
+          calories: Number(entry.calories),
+          mealType: entry.mealType,
+          users_permissions_user: user?.id, // ✅
+          publishedAt: new Date(),
+        },
+      };
+      console.log("NEW PAYLOAD (no date):", payload);
+
+      console.log("Sending Payload:", payload); // Debug: Check this in console
+
+      const response = await api.post("/api/food-logs", payload);
+      console.log("FULL RESPONSE:", response.data);
+      console.log("RESPONSE DATA:", response.data?.data);
+
+      if (response.data?.data) {
+        const newEntry = response.data.data;
+        setAllFoodLogs((prev) => [newEntry, ...prev]);
+        toast.success("Food Logged! 🍎");
+      }
+    } catch (error: any) {
+      const strapiMessage = error.response?.data?.error?.message;
+      const validationDetails = error.response?.data?.error?.details?.errors;
+
+      console.error("--- STRAPI ERROR DETAILS ---");
+      console.error("Main Message:", strapiMessage);
+      console.table(validationDetails); 
+
+      toast.error(strapiMessage || "Failed to add food");
     }
   };
 
   const addActivityLog = async (entry: any) => {
     try {
-      const payload = { data: { ...entry, publishedAt: new Date() } };
-      const { data } = await api.post("/api/activity-logs", payload);
-      setAllActivityLogs((prev) => [data.data || data, ...prev]);
-      toast.success("Activity Logged");
-    } catch (error) {
-      toast.error("Failed to add activity");
+      const payload = {
+  data: {
+    name: String(entry.name),
+    duration: Number(entry.duration),
+    calories: Number(entry.caloriesBurned),
+    users_permissions_user: user?.id,
+    publishedAt: new Date(),
+  },
+};
+
+    const response = await api.post("/api/activity-logs", payload);
+
+    if (response.data?.data) {
+      const newEntry = response.data.data; 
+      setAllActivityLogs((prev) => [newEntry, ...prev]);
+
+      toast.success("Activity Tracked! 🔥");
+    }
+  } catch (error: any) {
+      console.error(
+        "Activity Post Error:",
+        error.response?.data || error.message,
+      );
+      toast.error("Failed to add activity. Check console.");
     }
   };
+
+
   const deleteFoodLog = async (id: string | number) => {
     try {
       // Strapi endpoint for deleting a specific entry
@@ -179,9 +228,11 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
-      fetchUser(token).then(() => {
-        fetchFoodLogs();
-        fetchActivityLogs();
+      fetchUser(token).then((userData) => {
+        if (userData?.id) {
+          fetchFoodLogs(userData.id);
+          fetchActivityLogs(userData.id);
+        }
       });
     } else {
       setIsUserFetched(true);
@@ -200,7 +251,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     setOnboardingCompleted,
     allFoodLogs,
     allActivityLogs,
-    setAllActivityLogs, // PASS IT HERE
+    setAllActivityLogs,
     addFoodLog,
     deleteFoodLog,
     addActivityLog,
@@ -208,7 +259,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
-};
+};;
 
 export const useAppContext = () => {
   const context = useContext(AppContext);

@@ -24,7 +24,7 @@ const goalOptions = [
 
 const Onboarding = () => {
   const [step, setStep] = useState(1);
-  const { setOnboardingCompleted, setUser } = useAppContext();
+  const { setOnboardingCompleted, setUser,user } = useAppContext();
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState<ProfileFormData>({
@@ -73,23 +73,24 @@ const Onboarding = () => {
     if (step < totalSteps) {
       setStep((prev) => prev + 1);
     } else {
-      const userData = {
-        ...formData,
-        name: "User", // or ask user name later
-        createdAt: new Date().toISOString(),
-      };
-
-      localStorage.setItem("fitnessUser", JSON.stringify(userData));
-
       try {
-        await api.put(`/api/users/$(user?.id)`, userData)
-        toast.success("Profile created successfully 🚀");
+        const updateData = {
+          age: formData.age,
+          weight: formData.weight,
+          height: formData.height,
+          goal: formData.goal,
+        };
+        // 2. Send to Strapi
+        const { data } = await api.put(`/api/users/${user?.id}`, updateData);
+
+        // 3. Update the Global Context so the app "knows" the new data
+        setUser({ ...user, ...data});
+
+        toast.success("Profile synchronized! 🚀");
         setOnboardingCompleted(true);
         navigate("/", { replace: true });
-        
       } catch (error: any) {
-        toast.error(error.message)
-        
+        toast.error("Failed to save data to server");
       }
     }
   };

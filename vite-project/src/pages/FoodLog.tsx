@@ -16,23 +16,23 @@ import { FoodEntry } from "../types";
 import { toast } from "react-hot-toast";
 
 const FoodLog = () => {
-  // 1. Pulling functions from Context
   const { allFoodLogs, user, addFoodLog, deleteFoodLog } = useAppContext();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [isAdding, setIsAdding] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
-  // 2. Local state for the new meal form
   const [formData, setFormData] = useState({
     name: "",
-    calories: "" as string | number,
+    calories: "" as string|number,
     mealType: "breakfast" as FoodEntry["mealType"],
   });
 
-  // 3. Stats Calculation
+  // --- 1. FIXED STATS CALCULATION ---
   const stats = useMemo(() => {
     const totalConsumed = allFoodLogs.reduce(
-      (acc, log) => acc + (Number(log.calories) || 0),
+      (acc, log) =>
+        acc + (Number((log as any).calories ?? log?.calories) || 0),
       0,
     );
     const dailyTarget = Number(user?.dailyCalorieIntake) || 2000;
@@ -83,13 +83,12 @@ const FoodLog = () => {
     },
   ] as const;
 
-  // --- Handlers ---
-
-  const openAddModal = (type: FoodEntry["mealType"] = "breakfast") => {
+  const openAddModal = (
+    type: FoodEntry["mealType"] = "breakfast",
+  ) => {
     setFormData({ ...formData, mealType: type });
     setIsAdding(true);
   };
-  const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async () => {
     if (!formData.name || !formData.calories) {
@@ -97,7 +96,7 @@ const FoodLog = () => {
       return;
     }
 
-    setIsSaving(true); // Disable button while saving
+    setIsSaving(true);
     try {
       await addFoodLog({
         name: formData.name,
@@ -114,45 +113,10 @@ const FoodLog = () => {
     }
   };
 
-  const handleAiSnap = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const toastId = toast.loading("Analyzing your plate... 🥗");
-
-    try {
-      // SIMULATION: In a real app, you'd send 'file' to Gemini or OpenAI here
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      const mockDetection = {
-        name: "Chicken Salad Bowl",
-        calories: 450,
-        mealType: "lunch" as const,
-      };
-
-      // Auto-fill the form with AI results
-      setFormData({
-        name: mockDetection.name,
-        calories: mockDetection.calories,
-        mealType: mockDetection.mealType,
-      });
-
-      toast.success(
-        `Detected: ${mockDetection.name} (~${mockDetection.calories} kcal)`,
-        { id: toastId },
-      );
-
-      // Open the modal so the user can verify and "Save"
-      setIsAdding(true);
-    } catch (err) {
-      toast.error("AI Scan failed. Please enter manually.", { id: toastId });
-    }
-  };
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   return (
     <div className="min-h-screen bg-[#0B1221] p-4 md:p-8 text-slate-200">
-      {/* --- HERO SECTION --- */}
       <header className="max-w-6xl mx-auto mb-10">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
           <motion.div
@@ -199,32 +163,26 @@ const FoodLog = () => {
           </div>
         </div>
 
-        {/* Dynamic Progress Bar */}
         <div className="relative h-4 w-full bg-slate-800 rounded-full overflow-hidden border border-slate-700/50 p-1">
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${stats.progress}%` }}
-            className={`h-full rounded-full ${
-              stats.remaining < 0
-                ? "bg-red-500"
-                : "bg-gradient-to-r from-[#10B981] to-[#34D399]"
-            }`}
+            className={`h-full rounded-full ${stats.remaining < 0 ? "bg-red-500" : "bg-gradient-to-r from-[#10B981] to-[#34D399]"}`}
           />
         </div>
       </header>
 
       <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* --- ACTIONS PANEL --- */}
         <aside className="lg:col-span-4 space-y-6">
           <div className="relative group">
             <Search
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-[#10B981] transition-colors"
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-[#10B981]"
               size={18}
             />
             <input
               type="text"
               placeholder="Filter your meals..."
-              className="w-full bg-[#111827] border border-slate-800 rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-[#10B981]/20 outline-none transition-all"
+              className="w-full bg-[#111827] border border-slate-800 rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-[#10B981]/20 outline-none"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -254,29 +212,22 @@ const FoodLog = () => {
             >
               <Plus size={20} strokeWidth={3} /> ADD FOOD
             </button>
-            <button
-              type="button"
-              // This small arrow function fixes the Type Error!
-              onClick={() => fileInputRef.current?.click()}
-              className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-white py-4 rounded-2xl font-bold transition-all"
-            >
-              <Zap size={18} className="text-yellow-400 fill-yellow-400" />
-              AI SCAN
-            </button>
           </div>
         </aside>
 
-        {/* --- MEAL LOGS --- */}
+        {/* --- 2. FIXED MEAL LOGS SECTION --- */}
         <main className="lg:col-span-8 space-y-6">
           <AnimatePresence mode="popLayout">
             {categories.map((cat, idx) => {
               const items = allFoodLogs.filter(
                 (log) =>
-                  log.mealType === cat.id &&
-                  log.name.toLowerCase().includes(searchQuery.toLowerCase()),
+                  log.mealType === cat.id && // Added .attributes
+                  log.name
+                    .toLowerCase()
+                    .includes(searchQuery.toLowerCase()), // Added .attributes
               );
               const total = items.reduce(
-                (sum, item) => sum + (item.calories || 0),
+                (sum, item) => sum + (item.calories || 0), // Added .attributes
                 0,
               );
 
@@ -316,10 +267,7 @@ const FoodLog = () => {
                               Logged{" "}
                               {new Date(
                                 item.createdAt || Date.now(),
-                              ).toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
+                              ).toLocaleTimeString()}
                             </span>
                           </div>
                           <div className="flex items-center gap-5">
@@ -348,7 +296,7 @@ const FoodLog = () => {
         </main>
       </div>
 
-      {/* --- ADD MODAL OVERLAY --- */}
+      {/* --- ADD MODAL --- */}
       {isAdding && (
         <div className="fixed inset-0 bg-[#0B1221]/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
           <motion.div
@@ -399,7 +347,7 @@ const FoodLog = () => {
                   onClick={handleSave}
                   className="flex-1 py-4 bg-[#10B981] text-[#0B1221] rounded-2xl font-black"
                 >
-                  Save
+                  {isSaving ? "Saving..." : "Save"}
                 </button>
               </div>
             </div>

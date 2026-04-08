@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react"; // Added useEffect
 import { motion, AnimatePresence } from "framer-motion";
 import {
   User,
@@ -22,21 +22,39 @@ const Profile = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSavedMessage, setShowSavedMessage] = useState(false);
 
-  // Initialize local state from the Global User Context
+  // 1. Initialize with current user data or defaults
   const [stats, setStats] = useState({
-    age: user?.age || 21,
-    weight: user?.weight || 65,
-    height: user?.height || 180,
+    age: user?.age || 0,
+    weight: user?.weight || 0,
+    height: user?.height || 0,
     goal: user?.goal || "maintain",
   });
 
+  // 2. CHANGE: Added useEffect to sync data when switching accounts
+  useEffect(() => {
+    if (user) {
+      setStats({
+        age: user.age || 0,
+        weight: user.weight || 0,
+        height: user.height || 0,
+        goal: user.goal || "maintain",
+      });
+    }
+  }, [user]); // Re-runs whenever 'user' object changes in AppContext
+
   const handleSave = async () => {
+    if (!user?.id) {
+      toast.error("User session missing");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      // Strapi endpoint to update the current logged-in user
-      const { data } = await api.put("/api/users-permissions/users/me", stats);
+      // 3. CHANGE: Corrected URL path and template literal syntax
+      // Added /api/ prefix because your .env is just http://localhost:1337
+      const { data } = await api.put(`/api/users/${user.id}`, stats);
 
-      // Update Global Context so the whole app knows the new stats
+      // Update Global Context
       setUser({ ...user, ...data });
 
       setIsEditing(false);
@@ -157,7 +175,6 @@ const Profile = () => {
           </div>
         </div>
 
-        {/* Real Dynamic Stats */}
         <div className="space-y-4">
           <div className="bg-[#111827] border border-slate-800 p-6 rounded-3xl">
             <h3 className="font-black text-xs uppercase tracking-[0.2em] text-slate-500 mb-4">
@@ -194,7 +211,6 @@ const Profile = () => {
   );
 };
 
-// ... ProfileInput stays mostly the same but ensure value is handled as string/number ...
 interface ProfileInputProps {
   icon: React.ReactNode;
   label: string;

@@ -9,24 +9,24 @@ import {
   X,
   Loader2,
 } from "lucide-react";
-import { toast } from "react-hot-toast";
+import {toast} from "react-hot-toast";
 import api from "../configs/api"; // Your Axios instance
-import { useAppContext } from "../context/AppContext";
+import {useAppContext} from "../context/AppContext";
 
 const ActivityLog = () => {
-  // --- GLOBAL STATE ---
-  const { allActivityLogs, setAllActivityLogs } = useAppContext();
-
-  // --- LOCAL UI STATE ---
+  const {
+    allActivityLogs,
+    setAllActivityLogs,
+    addActivityLog,
+    deleteActivityLog,
+  } = useAppContext();
   const [isAdding, setIsAdding] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     duration: "",
-    caloriesBurned: "",
+    calories: "",
   });
-
-  // --- CONFIG ---
   const quickAddItems = [
     { name: "Walking", emoji: "🚶", defaultCal: 150 },
     { name: "Running", emoji: "🏃", defaultCal: 300 },
@@ -35,28 +35,23 @@ const ActivityLog = () => {
     { name: "Yoga", emoji: "🧘", defaultCal: 120 },
   ];
 
-  // --- CALCULATIONS ---
-  // Accessing .attributes because of Strapi's data structure
   const totalMinutes = allActivityLogs.reduce(
-    (acc, curr) => acc + (Number(curr.attributes?.duration) || 0),
+    (acc, curr) => acc + (Number(curr?.duration) || 0),
     0,
   );
 
   // --- API LOGIC ---
-
+  
   const handleQuickAdd = async (item: (typeof quickAddItems)[0]) => {
     const toastId = toast.loading(`Logging ${item.name}...`);
     try {
-      const response = await api.post("/activity-logs", {
-        data: {
-          name: item.name,
-          duration: 30,
-          caloriesBurned: item.defaultCal,
-          date: new Date().toISOString(),
-        },
+      
+      await addActivityLog({
+        name: item.name,
+        duration: 30,
+        calories: item.defaultCal,
       });
-      // Update global context with the new record from Strapi
-      setAllActivityLogs([response.data.data, ...allActivityLogs]);
+
       toast.success(`${item.name} logged!`, { id: toastId });
     } catch (err) {
       toast.error("Failed to log activity", { id: toastId });
@@ -64,25 +59,20 @@ const ActivityLog = () => {
   };
 
   const handleManualSave = async () => {
-    if (!formData.name || !formData.duration || !formData.caloriesBurned) {
+    if (!formData.name || !formData.duration || !formData.calories) {
       toast.error("Please fill all fields");
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const response = await api.post("/activity-logs", {
-        data: {
-          name: formData.name,
-          duration: Number(formData.duration),
-          caloriesBurned: Number(formData.caloriesBurned),
-          date: new Date().toISOString(),
-        },
+      await addActivityLog({
+        name: formData.name,
+        duration: formData.duration,
+        calories: formData.calories,
       });
-
-      setAllActivityLogs([response.data.data, ...allActivityLogs]);
       setIsAdding(false);
-      setFormData({ name: "", duration: "", caloriesBurned: "" });
+      setFormData({ name: "", duration: "", calories: "" });
       toast.success("Workout saved! 💪");
     } catch (err) {
       toast.error("Save failed. Try again.");
@@ -92,14 +82,7 @@ const ActivityLog = () => {
   };
 
   const deleteActivity = async (id: number) => {
-    const toastId = toast.loading("Removing activity...");
-    try {
-      await api.delete(`/activity-logs/${id}`);
-      setAllActivityLogs(allActivityLogs.filter((a: any) => a.id !== id));
-      toast.success("Activity deleted", { id: toastId });
-    } catch (err) {
-      toast.error("Could not delete", { id: toastId });
-    }
+    await deleteActivityLog(id); // Use the context version!
   };
 
   return (
@@ -196,7 +179,7 @@ const ActivityLog = () => {
                         {activity.attributes?.duration} min
                       </p>
                       <p className="text-[10px] text-slate-500 font-bold uppercase">
-                        {activity.attributes?.caloriesBurned} kcal
+                        {activity.attributes?.calories} kcal
                       </p>
                     </div>
                     <button
@@ -257,11 +240,11 @@ const ActivityLog = () => {
                     type="number"
                     placeholder="Calories"
                     className="w-full bg-slate-900/50 border border-slate-800 rounded-2xl p-4 outline-none focus:border-emerald-500"
-                    value={formData.caloriesBurned}
+                    value={formData.calories}
                     onChange={(e) =>
                       setFormData({
                         ...formData,
-                        caloriesBurned: e.target.value,
+                        calories: e.target.value,
                       })
                     }
                   />
@@ -284,6 +267,6 @@ const ActivityLog = () => {
       </AnimatePresence>
     </div>
   );
-};
+};;
 
 export default ActivityLog;
