@@ -129,7 +129,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     if (!id) { return; }
     try {
       const { data } = await api.get(
-        `/api/activity-logs?populate=*&filters[user][id][$eq]=${id}`,
+        `/api/activity-logs?populate=*&filters[users_permissions_user][id][$eq]=${id}`,
       );
       setAllActivityLogs(data.data || []);
     } catch (error) {
