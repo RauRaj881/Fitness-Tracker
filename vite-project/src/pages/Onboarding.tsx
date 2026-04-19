@@ -90,7 +90,9 @@ const Onboarding = () => {
         setOnboardingCompleted(true);
         navigate("/", { replace: true });
       } catch (error: any) {
-        toast.error("Failed to save data to server");
+        console.error("Onboarding Save Error:", error.response?.data || error.message);
+        const errorMsg = error.response?.data?.error?.message || "Failed to save data to server";
+        toast.error(`Error: ${errorMsg}`);
       }
     }
   };

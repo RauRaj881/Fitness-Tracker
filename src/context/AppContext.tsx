@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import mockApi from "../assets/mockApi";
 import { toast } from "react-hot-toast";
 
+
 interface AppContextType {
   user: User | null;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
@@ -109,8 +110,13 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     entry: Omit<ActivityEntry, "id" | "documentId" | "createdAt">,
   ) => {
     try {
-      const { data } = await mockApi.activityLogs.create({ data: entry });
-      setAllActivityLogs((prev) => [data, ...prev]);
+      const response = await mockApi.activityLogs.create({ data: entry });
+      
+      if (response.status !== 200 && response.status !== 201) {
+        throw new Error(`Invalid status code returned: ${response.status}`);
+      }
+
+      setAllActivityLogs((prev) => [response.data, ...prev]);
     } catch (error) {
       toast.error("Failed to add activity");
       throw error;

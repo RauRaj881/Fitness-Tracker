@@ -1,5 +1,5 @@
 import { dummyUser, dummyFoodLogs, dummyActivityLogs } from "../types/assets";
-import type { UserData, FoodEntry, ActivityEntry, FormData } from "../types";
+import type { UserData, FoodEntry, ActivityEntry } from "../types";
 
 interface DB {
     user: any;
@@ -103,7 +103,7 @@ const mockApi = {
             await delay(300);
             const db = getDB();
             const newEntry: FoodEntry = {
-                id: Date.now(),
+                id: Date.now().toString(),
                 documentId: "doc_food_" + Date.now(),
                 name: payload.data.name,
                 calories: payload.data.calories,
@@ -143,7 +143,7 @@ const mockApi = {
             };
             db.activityLogs.push(newEntry);
             saveDB(db);
-            return { data: newEntry };
+            return { data: newEntry, status: 201 };
         },
         delete: async (documentId: string) => {
             await delay(300);

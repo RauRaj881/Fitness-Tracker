@@ -176,7 +176,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   data: {
     name: String(entry.name),
     duration: Number(entry.duration),
-    calories: Number(entry.caloriesBurned),
+    calories: Number(entry.calories),
     users_permissions_user: user?.id,
     publishedAt: new Date(),
   },

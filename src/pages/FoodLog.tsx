@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import { useAppContext } from "../context/AppContext";
 import {
   Plus,
@@ -111,12 +111,38 @@ const FoodLog = () => {
     }
   };
 
-  const handleAiSnap = () => {
-    toast.loading("Scanning plate...", { id: "ai-snap" });
-    setTimeout(() => {
-      toast.success("Detected: Greek Salad (~240 kcal)", { id: "ai-snap" });
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAiClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    toast.loading("Scanning plate imagery...", { id: "ai-snap" });
+
+    if (fileInputRef.current) fileInputRef.current.value = "";
+
+    setTimeout(async () => {
+      const foodName = file.name ? file.name.split('.')[0] : "AI Scanned Meal";
+      const cals = Math.floor(Math.random() * 400) + 150;
+
+      try {
+        await addFoodLog({
+          name: `AI: ${foodName}`,
+          calories: cals,
+          mealType: "lunch",
+          date: new Date().toISOString().split("T")[0],
+        });
+        toast.success(`Logged: ${foodName} (~${cals} kcal)`, { id: "ai-snap" });
+      } catch (err) {
+        toast.error("AI scanning failed", { id: "ai-snap" });
+      }
     }, 1500);
   };
+
 
   return (
     <div className="min-h-screen bg-[#0B1221] p-4 md:p-8 text-slate-200">
@@ -223,12 +249,20 @@ const FoodLog = () => {
               <Plus size={20} strokeWidth={3} /> ADD FOOD
             </button>
             <button
-              onClick={handleAiSnap}
+              onClick={handleAiClick}
               className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-white py-4 rounded-2xl font-bold transition-all"
             >
               <Zap size={18} className="text-yellow-400 fill-yellow-400" /> AI
               SCAN
             </button>
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              ref={fileInputRef}
+              onChange={handleImageUpload}
+              style={{ display: "none" }}
+            />
           </div>
         </aside>
 

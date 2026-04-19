@@ -10,8 +10,8 @@ export default factories.createCoreController(
       const requestBody = (ctx.request.body as any) || {};
       const data = requestBody.data || {};
 
-      // Based on your schema, the back-relation is likely 'user'
-      data.user = user.id;
+      // Based on your schema, the back-relation is users_permissions_user
+      data.users_permissions_user = user.id;
 
       (ctx.request.body as any).data = data;
       return await super.create(ctx);
@@ -26,7 +26,7 @@ export default factories.createCoreController(
         ...existingQuery,
         filters: {
           ...(existingQuery.filters || {}),
-          user: { id: user.id }, // Scoping to the specific user ID
+          users_permissions_user: user.id, // Scoping to the specific user ID
         },
       };
 
@@ -45,7 +45,7 @@ export default factories.createCoreController(
         filters: {
           ...(existingQuery.filters || {}),
           id,
-          user: { id: user.id },
+          users_permissions_user: user.id,
         },
       };
 

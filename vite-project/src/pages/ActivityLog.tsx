@@ -161,11 +161,11 @@ const ActivityLog = () => {
                     </div>
                     <div>
                       <p className="font-bold text-white">
-                        {activity.attributes?.name}
+                        {activity.name}
                       </p>
                       <p className="text-xs text-slate-500">
                         {new Date(
-                          activity.attributes?.createdAt,
+                          activity.createdAt || activity.publishedAt || Date.now(),
                         ).toLocaleTimeString([], {
                           hour: "2-digit",
                           minute: "2-digit",
@@ -176,10 +176,10 @@ const ActivityLog = () => {
                   <div className="flex items-center gap-6">
                     <div className="text-right">
                       <p className="font-black text-white">
-                        {activity.attributes?.duration} min
+                        {activity.duration} min
                       </p>
                       <p className="text-[10px] text-slate-500 font-bold uppercase">
-                        {activity.attributes?.calories} kcal
+                        {activity.calories} kcal
                       </p>
                     </div>
                     <button
