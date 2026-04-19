@@ -70,10 +70,10 @@ const Profile = () => {
   };
 
   return (
-    <div className="p-6 bg-[#0B1221] min-h-screen text-white font-sans">
+    <div className="p-6 bg-slate-50 dark:bg-[#0B1221] min-h-screen text-slate-800 dark:text-white font-sans transition-colors">
       <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-2 space-y-4">
-          <div className="bg-[#111827] border border-slate-800 p-6 rounded-3xl relative overflow-hidden">
+          <div className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800 p-6 rounded-3xl relative overflow-hidden transition-colors shadow-lg">
             <AnimatePresence>
               {showSavedMessage && (
                 <motion.div
@@ -92,7 +92,7 @@ const Profile = () => {
                 <User className="text-white" size={24} />
               </div>
               <div>
-                <h2 className="text-xl font-bold tracking-tight">
+                <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
                   {user?.username || "Your Profile"}
                 </h2>
                 <p className="text-slate-500 text-sm">
@@ -124,7 +124,7 @@ const Profile = () => {
                 onChange={(v) => setStats({ ...stats, height: Number(v) })}
               />
 
-              <div className="flex items-center gap-4 bg-[#1F2937]/30 p-4 rounded-2xl border border-slate-800/50">
+              <div className="flex items-center gap-4 bg-slate-100 dark:bg-[#1F2937]/30 p-4 rounded-2xl border border-slate-200 dark:border-slate-800/50 transition-colors">
                 <Target className="text-rose-500" size={18} />
                 <div className="grow">
                   <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest mb-1">
@@ -132,7 +132,7 @@ const Profile = () => {
                   </p>
                   {isEditing ? (
                     <select
-                      className="bg-[#111827] text-white font-bold outline-none w-full border border-slate-700 rounded-lg p-1 capitalize"
+                      className="bg-white dark:bg-[#111827] text-slate-900 dark:text-white font-bold outline-none w-full border border-slate-300 dark:border-slate-700 rounded-lg p-1 capitalize transition-colors"
                       value={stats.goal}
                       onChange={(e) =>
                         setStats({ ...stats, goal: e.target.value as any })
@@ -176,12 +176,12 @@ const Profile = () => {
         </div>
 
         <div className="space-y-4">
-          <div className="bg-[#111827] border border-slate-800 p-6 rounded-3xl">
+          <div className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800 p-6 rounded-3xl transition-colors shadow-lg">
             <h3 className="font-black text-xs uppercase tracking-[0.2em] text-slate-500 mb-4">
               Lifetime Activity
             </h3>
             <div className="grid grid-cols-2 gap-3">
-              <div className="bg-[#0B1221] p-4 rounded-2xl border border-slate-800/50 text-center">
+              <div className="bg-slate-50 dark:bg-[#0B1221] p-4 rounded-2xl border border-slate-200 dark:border-slate-800/50 text-center transition-colors">
                 <p className="text-2xl font-black text-emerald-500">
                   {allFoodLogs.length}
                 </p>
@@ -189,7 +189,7 @@ const Profile = () => {
                   Meals
                 </p>
               </div>
-              <div className="bg-[#0B1221] p-4 rounded-2xl border border-slate-800/50 text-center">
+              <div className="bg-slate-50 dark:bg-[#0B1221] p-4 rounded-2xl border border-slate-200 dark:border-slate-800/50 text-center transition-colors">
                 <p className="text-2xl font-black text-blue-500">
                   {allActivityLogs.length}
                 </p>
@@ -226,7 +226,7 @@ const ProfileInput = ({
   isEditing,
   onChange,
 }: ProfileInputProps) => (
-  <div className="flex items-center gap-4 bg-[#1F2937]/30 p-4 rounded-2xl border border-slate-800/50 transition-all hover:border-slate-700">
+  <div className="flex items-center gap-4 bg-slate-100 dark:bg-[#1F2937]/30 p-4 rounded-2xl border border-slate-200 dark:border-slate-800/50 transition-all hover:border-slate-300 dark:hover:border-slate-700">
     <div className="text-blue-400">{icon}</div>
     <div className="grow">
       <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest mb-1">
@@ -235,12 +235,12 @@ const ProfileInput = ({
       {isEditing ? (
         <input
           type="number"
-          className="bg-[#0B1221] text-white font-bold outline-none border border-blue-500/50 rounded-lg px-2 py-1 w-full"
+          className="bg-white dark:bg-[#0B1221] text-slate-900 dark:text-white font-bold outline-none border border-blue-500/50 rounded-lg px-2 py-1 w-full transition-colors"
           value={value}
           onChange={(e) => onChange(e.target.value)}
         />
       ) : (
-        <p className="font-bold text-lg">
+        <p className="font-bold text-lg text-slate-900 dark:text-white">
           {value}{" "}
           <span className="text-sm font-medium text-slate-500">
             {label.includes("kg") ? "kg" : label.includes("cm") ? "cm" : "yrs"}

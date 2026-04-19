@@ -86,7 +86,7 @@ const ActivityLog = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0B1221] p-4 md:p-8 text-white">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#0B1221] p-4 md:p-8 text-slate-800 dark:text-white transition-colors">
       {/* --- HEADER --- */}
       <header className="max-w-6xl mx-auto mb-10 flex justify-between items-end">
         <div>
@@ -107,7 +107,7 @@ const ActivityLog = () => {
 
       <main className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* --- LEFT: QUICK ADD --- */}
-        <section className="bg-[#111827] border border-slate-800 p-8 rounded-[40px] shadow-xl h-fit">
+        <section className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800 p-8 rounded-[40px] shadow-xl h-fit transition-colors">
           <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
             Quick Add <Zap size={18} className="text-yellow-400" />
           </h3>
@@ -131,7 +131,7 @@ const ActivityLog = () => {
         </section>
 
         {/* --- RIGHT: LIST --- */}
-        <section className="bg-[#111827] border border-slate-800 p-8 rounded-[40px] shadow-xl flex flex-col min-h-[400px]">
+        <section className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800 p-8 rounded-[40px] shadow-xl flex flex-col min-h-[400px] transition-colors">
           <div className="flex items-center gap-4 mb-8">
             <div className="bg-emerald-500/10 p-3 rounded-2xl text-emerald-400">
               <ActivityIcon size={24} />
@@ -153,14 +153,14 @@ const ActivityLog = () => {
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, x: -20 }}
-                  className="bg-slate-800/20 border border-slate-800/50 p-5 rounded-3xl flex justify-between items-center group"
+                  className="bg-slate-50 dark:bg-slate-800/20 border border-slate-200 dark:border-slate-800/50 p-5 rounded-3xl flex justify-between items-center group transition-colors"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="bg-slate-900 p-3 rounded-2xl text-emerald-400">
+                    <div className="bg-slate-200 dark:bg-slate-900 p-3 rounded-2xl text-emerald-600 dark:text-emerald-400">
                       <Timer size={20} />
                     </div>
                     <div>
-                      <p className="font-bold text-white">
+                      <p className="font-bold text-slate-900 dark:text-white">
                         {activity.name}
                       </p>
                       <p className="text-xs text-slate-500">
@@ -175,7 +175,7 @@ const ActivityLog = () => {
                   </div>
                   <div className="flex items-center gap-6">
                     <div className="text-right">
-                      <p className="font-black text-white">
+                      <p className="font-black text-slate-900 dark:text-white">
                         {activity.duration} min
                       </p>
                       <p className="text-[10px] text-slate-500 font-bold uppercase">
@@ -199,18 +199,18 @@ const ActivityLog = () => {
       {/* --- MANUAL ADD MODAL --- */}
       <AnimatePresence>
         {isAdding && (
-          <div className="fixed inset-0 bg-[#0B1221]/95 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-[#0B1221]/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-[#111827] border border-slate-800 p-8 rounded-[40px] w-full max-w-md shadow-2xl"
+              className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800 p-8 rounded-[40px] w-full max-w-md shadow-2xl transition-colors"
             >
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-black text-white">New Activity</h2>
+                <h2 className="text-2xl font-black text-slate-900 dark:text-white">New Activity</h2>
                 <button
                   onClick={() => setIsAdding(false)}
-                  className="text-slate-500 hover:text-white"
+                  className="text-slate-500 hover:text-slate-800 dark:hover:text-white"
                 >
                   <X />
                 </button>

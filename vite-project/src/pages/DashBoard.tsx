@@ -43,25 +43,38 @@ const Dashboard = () => {
           ? "bg-yellow-400"
           : "bg-red-600";
 
-  // Sample week's progress data
-  const weekData = [
-    { day: "Mon", consumed: 2800, burned: 350, active: 40 },
-    { day: "Tue", consumed: 3000, burned: 400, active: 50 },
-    { day: "Wed", consumed: 2500, burned: 300, active: 30 },
-    { day: "Thu", consumed: 3200, burned: 450, active: 60 },
-    { day: "Fri", consumed: 3100, burned: 420, active: 55 },
-    { day: "Sat", consumed: 2900, burned: 380, active: 45 },
-    { day: "Sun", consumed: 2700, burned: 360, active: 35 },
-  ];
+  // Compute Dynamic Week Data
+  const weekData = Array.from({ length: 7 }).map((_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    const dateStr = d.toDateString();
+
+    const foodsForDay = allFoodLogs.filter((log: any) => {
+      const logDate = new Date(log.createdAt || log.publishedAt || Date.now()).toDateString();
+      return logDate === dateStr;
+    });
+
+    const activitiesForDay = allActivityLogs.filter((log: any) => {
+      const logDate = new Date(log.createdAt || log.publishedAt || Date.now()).toDateString();
+      return logDate === dateStr;
+    });
+
+    return {
+      day: d.toLocaleDateString("en-US", { weekday: "short" }),
+      consumed: foodsForDay.reduce((sum, item: any) => sum + (Number(item.calories) || 0), 0),
+      burned: activitiesForDay.reduce((sum, item: any) => sum + (Number(item.calories) || 0), 0),
+      active: activitiesForDay.reduce((sum, item: any) => sum + (Number(item.duration) || 0), 0),
+    };
+  });
   const bmiPercentage = Math.min((bmi / 30) * 100, 100);
 
   return (
-    <div className="flex-1 bg-[#020817] text-white p-6">
+    <div className="flex-1 bg-white dark:bg-[#020817] text-slate-900 dark:text-white p-6 transition-colors">
       {/* Header */}
       <div className="dashboard-header">
         <p className="text-emerald-100 text-sm font-medium">Welcome Back</p>
         <h1 className="text-2xl font-bold mt-1">
-          {`Hi there! 👋 ${user?.name}`}
+          {`Hi there! 👋 ${user?.username || 'User'}`}
         </h1>
 
         {/* Motivation */}
@@ -72,7 +85,7 @@ const Dashboard = () => {
       </div>
 
       {/* Calories Card */}
-      <div className="bg-[#080808] p-6 rounded-2xl mb-6 shadow-lg space-y-6">
+      <div className="bg-slate-50 dark:bg-[#080808] border border-slate-200 dark:border-none p-6 rounded-2xl mb-6 shadow-lg space-y-6 transition-colors">
         {/* Consumed */}
         <div>
           <div className="flex justify-between text-sm text-gray-400 items-center">
@@ -115,8 +128,8 @@ const Dashboard = () => {
 
       {/* Stats Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <div className="bg-[#0B1221] p-5 rounded-2xl flex flex-col items-start">
-          <div className="flex items-center gap-2 text-gray-400 text-sm">
+        <div className="bg-slate-50 dark:bg-[#0B1221] border border-slate-200 dark:border-none p-5 rounded-2xl flex flex-col items-start transition-colors">
+          <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-sm">
             <Activity className="w-5 h-5" /> Active
           </div>
           <h2 className="text-xl font-bold mt-2">
@@ -124,8 +137,8 @@ const Dashboard = () => {
           </h2>
         </div>
 
-        <div className="bg-[#0B1221] p-5 rounded-2xl flex flex-col items-start">
-          <div className="flex items-center gap-2 text-gray-400 text-sm">
+        <div className="bg-slate-50 dark:bg-[#0B1221] border border-slate-200 dark:border-none p-5 rounded-2xl flex flex-col items-start transition-colors">
+          <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-sm">
             <Dumbbell className="w-5 h-5" /> Workouts
           </div>
           <h2 className="text-xl font-bold mt-2">
@@ -136,15 +149,15 @@ const Dashboard = () => {
 
       {/* Goal & Body Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <div className="bg-[#0B1221] p-5 rounded-2xl flex flex-col items-start">
-          <div className="flex items-center gap-2 text-gray-400 text-sm">
+        <div className="bg-slate-50 dark:bg-[#0B1221] border border-slate-200 dark:border-none p-5 rounded-2xl flex flex-col items-start transition-colors">
+          <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-sm">
             <Target className="w-5 h-5" /> Your Goal
           </div>
           <h2 className="text-xl font-bold mt-2">💪 Gain Muscles</h2>
         </div>
 
-        <div className="bg-[#0B1221] p-5 rounded-2xl">
-          <p className="text-gray-400 text-sm flex items-center gap-2">
+        <div className="bg-slate-50 dark:bg-[#0B1221] border border-slate-200 dark:border-none p-5 rounded-2xl transition-colors">
+          <p className="text-gray-500 dark:text-gray-400 text-sm flex items-center gap-2">
             <User className="w-5 h-5" /> Body Metrics
           </p>
           <div className="mt-3 space-y-1">
@@ -177,8 +190,8 @@ const Dashboard = () => {
       </div>
 
       {/* Week's Progress Chart */}
-      <div className="bg-[#0B1221] p-5 rounded-2xl mb-6">
-        <p className="text-gray-400 text-sm mb-2">Week's Progress</p>
+      <div className="bg-slate-50 dark:bg-[#0B1221] border border-slate-200 dark:border-none p-5 rounded-2xl mb-6 transition-colors">
+        <p className="text-gray-500 dark:text-gray-400 text-sm mb-2">Week's Progress</p>
         <ResponsiveContainer width="100%" height={200}>
           <LineChart data={weekData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
@@ -208,8 +221,8 @@ const Dashboard = () => {
       </div>
 
       {/* Summary */}
-      <div className="bg-[#0B1221] p-5 rounded-2xl mt-6">
-        <p className="text-gray-400 text-sm">Today's Summary</p>
+      <div className="bg-slate-50 dark:bg-[#0B1221] border border-slate-200 dark:border-none p-5 rounded-2xl mt-6 transition-colors">
+        <p className="text-gray-500 dark:text-gray-400 text-sm">Today's Summary</p>
         <div className="mt-2 text-sm space-y-1">
           <p>Meals logged: {allFoodLogs.length}</p>
           <p>Total calories: {consumed}</p>

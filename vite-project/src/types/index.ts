@@ -26,7 +26,7 @@ export interface ActivityEntry {
   id: number;
   name: string;
   duration: number;
-  caloriesBurned: number;
+  calories: number;
   date?: string;
   createdAt?: string;
   updatedAt?: string;
