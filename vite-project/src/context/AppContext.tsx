@@ -55,6 +55,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       setUser({ ...data.user, token: data.jwt });
       checkOnboarding(data.user);
       toast.success("Registration Successful!");
+      navigate("/");
     } catch (error: any) {
       toast.error(
         error?.response?.data?.error?.message || "Registration failed",
@@ -81,6 +82,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         fetchActivityLogs(data.user.id),
       ]);
       toast.success("Welcome back!");
+      navigate("/");
     } catch (error: any) {
       toast.error(
         error?.response?.data?.error?.message || "Invalid Credentials",
@@ -104,8 +106,8 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
   const logout = () => {
     localStorage.clear();
-    // This wipes the React memory and takes them to the login page
-    window.location.href = "/login";
+    // This wipes the React memory and takes them to the root page safely
+    window.location.href = "/";
   };
 
   // --- Data Fetching ---
@@ -116,7 +118,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       const { data } = await api.get(
         `/api/food-logs?populate=*&filters[users_permissions_user][id][$eq]=${id}`, // ✅
       );
-      setAllFoodLogs(data.data);
+      setAllFoodLogs(data.data || []);
     } catch (error) {
       console.error("Fetch Food Error:", error);
     }

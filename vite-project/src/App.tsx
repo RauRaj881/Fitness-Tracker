@@ -11,7 +11,11 @@ import Onboarding from "./pages/Onboarding"
 import { Toaster }  from "react-hot-toast"
 
 const App = () => {
-  const { user, OnboardingCompleted } = useAppContext();
+  const { user, OnboardingCompleted, isUserFetched } = useAppContext();
+
+  if (!isUserFetched) {
+    return <Loading />;
+  }
 
   // 1. If there is no user, show the Login page
   if (!user) {
