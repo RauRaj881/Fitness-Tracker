@@ -59,7 +59,7 @@ const ActivityLog = () => {
   };
 
   const handleManualSave = async () => {
-    if (!formData.name || !formData.duration || !formData.calories) {
+    if (!formData.name || !formData.duration || !formData.calories){
       toast.error("Please fill all fields");
       return;
     }

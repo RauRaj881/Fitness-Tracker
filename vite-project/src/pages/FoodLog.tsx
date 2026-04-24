@@ -144,7 +144,6 @@ const FoodLog = () => {
         throw new Error("Invalid scan result");
       }
     } catch (error) {
-      console.error(error);
       toast.error("Failed to analyze image", { id: toastId });
     } finally {
       setIsScanning(false);

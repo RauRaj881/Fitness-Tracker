@@ -63,7 +63,6 @@ const Profile = () => {
       toast.success("Profile synced with cloud!");
     } catch (error) {
       toast.error("Failed to update profile");
-      console.error(error);
     } finally {
       setIsSubmitting(false);
     }
