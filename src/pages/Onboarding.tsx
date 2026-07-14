@@ -1,4 +1,3 @@
-import { Toaster } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import {
   PersonStanding,
@@ -14,6 +13,7 @@ import { useState } from "react";
 import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
 import toast from "react-hot-toast";
+import api from "../configs/api";
 
 const goalOptions = [
   { value: "lose", label: "Lose Weight" },
@@ -23,7 +23,7 @@ const goalOptions = [
 
 const Onboarding = () => {
   const [step, setStep] = useState(1);
-  const { setOnboardingCompleted, setUser } = useAppContext();
+  const { setOnboardingCompleted, setUser, user } = useAppContext();
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState<ProfileFormData>({
@@ -66,34 +66,38 @@ const Onboarding = () => {
     return true;
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (!validateStep()) return;
 
     if (step < totalSteps) {
       setStep((prev) => prev + 1);
     } else {
-      const userData = {
-        ...formData,
-        name: "User", // or ask user name later
-        createdAt: new Date().toISOString(),
-      };
+      try {
+        const updateData = {
+          age: formData.age,
+          weight: formData.weight,
+          height: formData.height,
+          goal: formData.goal,
+          dailyCalorieIntake: formData.dailyCalorieIntake,
+          dailyCalorieBurn: formData.dailyCalorieBurn,
+        };
 
-      localStorage.setItem("fitnessUser", JSON.stringify(userData));
+        const { data } = await api.put(`/api/users/${user?.id}`, updateData);
 
-      // 🔥 IMPORTANT: set user in context
-      setUser(userData);
-      toast.dismiss();
-
-      //toast.success("Profile created successfully 🚀");
-      setOnboardingCompleted(true);
-      navigate("/", { replace: true });
+        setUser({ ...user, ...data });
+        toast.dismiss();
+        toast.success("Profile synchronized! 🚀");
+        setOnboardingCompleted(true);
+        navigate("/", { replace: true });
+      } catch (error: any) {
+        const errorMsg = error.response?.data?.error?.message || "Failed to save data to server";
+        toast.error(`Error: ${errorMsg}`);
+      }
     }
   };
 
   return (
     <>
-      <Toaster />
-
       <div className="min-h-screen bg-linear
       -to-br from-[#0f172a] to-[#020617] text-white flex flex-col">
         {/* Header */}

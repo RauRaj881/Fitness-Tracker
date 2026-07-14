@@ -2,7 +2,7 @@ import { useState } from "react";
 import { AtSign, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext"; // Import your context
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 
 const Login = () => {
   const [state, setState] = useState("signup"); // Use lowercase consistently
@@ -38,7 +38,6 @@ const Login = () => {
 
   return (
     <>
-      <Toaster />
       <main className="login-page-container min-h-screen flex items-center justify-center bg-black">
         {/* ADDED onSubmit HERE */}
         <form

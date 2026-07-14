@@ -14,7 +14,7 @@ const Sidebar = () => {
   ];
 
   return (
-    <div className="flex flex-col h-screen w-64 bg-[#0B1221] text-gray-400 p-4 border-r border-gray-800">
+    <div className="themed-surface flex flex-col h-screen w-64 text-gray-400 p-4 border-r border-[var(--border-color)] transition-colors duration-200">
       {/* Logo Section */}
       <div className="flex items-center gap-3 px-2 mb-10">
         <div className="bg-[#10B981] p-1.5 rounded-lg">
@@ -55,7 +55,7 @@ const Sidebar = () => {
       <div className="pt-4 border-t border-gray-800">
         <button
           onClick={toggleTheme}
-          className="flex items-center gap-4 px-4 py-3 w-full hover:text-white transition-colors"
+          className="flex items-center gap-4 px-4 py-3 w-full rounded-lg hover:text-white hover:bg-white/5 transition-colors"
         >
           {theme === "dark" ? <Sun size={22} /> : <Moon size={22} />}
           <span className="font-medium">

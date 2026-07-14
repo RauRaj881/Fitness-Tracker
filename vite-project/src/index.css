@@ -1,8 +1,23 @@
 @import url('https://fonts.googleapis.com/css2?family=Rethink+Sans:ital,wght@0,400..800;1,400..800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
 @import "tailwindcss";
 
-/* ✅ Changed @variant to @custom-variant for Tailwind v4 */
+/* Changed @variant to @custom-variant for Tailwind v4 */
 @custom-variant dark (&:where(.dark, .dark *));
+
+/* Design tokens */
+:root {
+  --color-ember: #FF6B4A;   /* calories burned / energy */
+  --color-mint: #3DDC97;    /* calories consumed / nutrition */
+  --color-amber: #FFB800;   /* goals / streaks */
+  --color-surface: #F8FAFC; /* light mode card surface */
+  --color-app-bg: #FFFFFF;
+}
+
+.dark {
+  --color-surface: #141B2D;
+  --color-app-bg: #0D1117;
+}
 
 /* Use @theme or standard CSS for globals in v4 */
 @layer base {
@@ -12,21 +27,28 @@
 
   body {
     /* Using @apply on body works, but ensure it's inside a layer or after imports */
-    @apply dark:bg-blue-950 dark:text-white;
+    @apply dark:bg-[#0D1117] dark:text-white;
   }
+}
+
+/* Scoreboard-style stat numbers (used for big calorie/metric counts) */
+.stat-number {
+  font-family: "Bebas Neue", "Rethink Sans", sans-serif;
+  letter-spacing: 0.02em;
+  line-height: 1;
 }
 
 /* Shared Page Styles */
 .page-container {
-  @apply min-h-screen bg-slate-50 dark:bg-slate-950 pb-24 transition-colors duration-200;
+  @apply min-h-screen bg-slate-50 dark:bg-[#0D1117] pb-24 transition-colors duration-200;
 }
 
 .page-header {
-  @apply bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 p-6 pt-12 transition-colors duration-200;
+  @apply bg-white dark:bg-[#141B2D] border-b border-slate-100 dark:border-slate-800 p-6 pt-12 transition-colors duration-200;
 }
 
 .layout-container {
-  @apply min-h-screen lg:max-h-screen lg:flex bg-white dark:bg-slate-950 transition-colors duration-200;
+  @apply min-h-screen lg:max-h-screen lg:flex bg-white dark:bg-[#0D1117] transition-colors duration-200;
 }
 
 .page-content-grid {
@@ -35,7 +57,7 @@
 
 /* Login Page */
 .login-page-container {
-  @apply flex items-center justify-center w-full h-screen px-4 bg-white dark:bg-slate-950 transition-colors duration-200;
+  @apply flex items-center justify-center w-full h-screen px-4 bg-white dark:bg-[#0D1117] transition-colors duration-200;
 }
 
 .login-form {
@@ -43,17 +65,17 @@
 }
 
 .login-input {
-  @apply pl-10 rounded-md ring ring-gray-200 dark:ring-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-600 dark:focus:ring-green-500 outline-none p-2.5 w-full transition-all duration-200;
+  @apply pl-10 rounded-md ring ring-gray-200 dark:ring-slate-700 bg-white dark:bg-[#141B2D] text-gray-900 dark:text-white focus:ring-2 focus:ring-[#3DDC97] dark:focus:ring-[#3DDC97] outline-none p-2.5 w-full transition-all duration-200;
 }
 
 .login-button {
-  @apply mt-6 py-2.5 w-full rounded-md bg-green-600 text-white transition hover:bg-green-700 disabled:opacity-60 text-sm;
+  @apply mt-6 py-2.5 w-full rounded-md bg-[#3DDC97] text-slate-900 font-medium transition hover:opacity-90 disabled:opacity-60 text-sm;
 }
 
 /* Dashboard Page */
 .dashboard-header {
   /* Note: bg-linear-to-br is correct v4 syntax! */
-  @apply bg-linear-to-br from-emerald-500 to-emerald-600 text-white p-6 pt-12 pb-20 rounded-b-3xl;
+  @apply bg-linear-to-br from-[#FF6B4A] to-[#FFB800] text-white p-6 pt-12 pb-20 rounded-b-3xl;
 }
 
 .dashboard-grid {
@@ -70,22 +92,22 @@
 }
 
 .profile-info-row {
-  @apply flex items-center gap-4 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg transition-colors duration-200;
+  @apply flex items-center gap-4 p-3 bg-slate-50 dark:bg-[#141B2D] rounded-lg transition-colors duration-200;
 }
 
 /* Food Log Page */
 .food-entry-item {
-  @apply flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-xl transition-colors duration-200;
+  @apply flex items-center justify-between p-3 bg-slate-50 dark:bg-[#141B2D] rounded-xl transition-colors duration-200;
 }
 
 /* Activity Log Page */
 .activity-entry-item {
-  @apply flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-xl transition-colors duration-200;
+  @apply flex items-center justify-between p-4 bg-slate-50 dark:bg-[#141B2D] rounded-xl transition-colors duration-200;
 }
 
 /* Onboarding Page */
 .onboarding-container {
-  @apply min-h-screen bg-linear-to-b from-emerald-50 to-white dark:from-slate-900 dark:to-slate-950 flex flex-col transition-colors duration-200;
+  @apply min-h-screen bg-linear-to-b from-emerald-50 to-white dark:from-[#0D1117] dark:to-[#0D1117] flex flex-col transition-colors duration-200;
 }
 
 .onboarding-wrapper {
@@ -93,5 +115,5 @@
 }
 
 .onboarding-option-btn {
-  @apply w-full p-3 pl-5 rounded-xl border text-left border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600 transition-all duration-200 cursor-pointer;
+  @apply w-full p-3 pl-5 rounded-xl border text-left border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#141B2D] hover:border-slate-300 dark:hover:border-slate-600 transition-all duration-200 cursor-pointer;
 }

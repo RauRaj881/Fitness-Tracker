@@ -80,6 +80,9 @@ const ActivityLog = () => {
       setIsSubmitting(false);
     }
   };
+  /*Interview point: Input validation prevents invalid data. 
+  Loading state prevents accidental double-submissions during slow networks.
+  */
 
   const deleteActivity = async (id: number) => {
     await deleteActivityLog(id); // Use the context version!

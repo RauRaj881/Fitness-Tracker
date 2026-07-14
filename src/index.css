@@ -1,22 +1,76 @@
 @import url('https://fonts.googleapis.com/css2?family=Rethink+Sans:ital,wght@0,400..800;1,400..800&display=swap');
 @import "tailwindcss";
 
-/* ✅ Changed @variant to @custom-variant for Tailwind v4 */
+/* ✅ Tailwind v4 dark variant */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Use @theme or standard CSS for globals in v4 */
+/* ─── CSS Theme Variables ─────────────────────────────────────────── */
+/* Dark mode (default) */
+:root,
+.dark {
+  --bg-page:     #020817;
+  --bg-surface:  #0B1221;
+  --bg-card:     #111827;
+  --bg-input:    rgba(15, 23, 42, 0.5);
+  --border-color: #1e293b;
+  --text-primary: #ffffff;
+  --text-muted:   #94a3b8;
+  --text-faint:   #475569;
+}
+
+/* Light mode */
+.light {
+  --bg-page:     #f1f5f9;
+  --bg-surface:  #ffffff;
+  --bg-card:     #f8fafc;
+  --bg-input:    #ffffff;
+  --border-color: #e2e8f0;
+  --text-primary: #0f172a;
+  --text-muted:   #64748b;
+  --text-faint:   #94a3b8;
+}
+
+/* ─── Apply Variables to Layout Containers ────────────────────────── */
 @layer base {
   * {
     font-family: "Rethink Sans", sans-serif;
   }
 
+  html {
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
   body {
-    /* Using @apply on body works, but ensure it's inside a layer or after imports */
-    @apply dark:bg-blue-950 dark:text-white;
+    background-color: var(--bg-page);
+    color: var(--text-primary);
   }
 }
 
-/* Shared Page Styles */
+/* ─── Theme-aware utility classes ─────────────────────────────────── */
+.themed-page {
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+  min-height: 100vh;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.themed-surface {
+  background-color: var(--bg-surface);
+  transition: background-color 0.2s ease;
+}
+
+.themed-card {
+  background-color: var(--bg-card);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.themed-muted {
+  color: var(--text-muted);
+}
+
+/* ─── Existing Shared Page Styles ─────────────────────────────────── */
 .page-container {
   @apply min-h-screen bg-slate-50 dark:bg-slate-950 pb-24 transition-colors duration-200;
 }
@@ -26,7 +80,8 @@
 }
 
 .layout-container {
-  @apply min-h-screen lg:max-h-screen lg:flex bg-white dark:bg-slate-950 transition-colors duration-200;
+  @apply min-h-screen lg:max-h-screen lg:flex transition-colors duration-200;
+  background-color: var(--bg-page);
 }
 
 .page-content-grid {
@@ -35,7 +90,8 @@
 
 /* Login Page */
 .login-page-container {
-  @apply flex items-center justify-center w-full h-screen px-4 bg-white dark:bg-slate-950 transition-colors duration-200;
+  @apply flex items-center justify-center w-full h-screen px-4 transition-colors duration-200;
+  background-color: var(--bg-page);
 }
 
 .login-form {
@@ -52,7 +108,6 @@
 
 /* Dashboard Page */
 .dashboard-header {
-  /* Note: bg-linear-to-br is correct v4 syntax! */
   @apply bg-linear-to-br from-emerald-500 to-emerald-600 text-white p-6 pt-12 pb-20 rounded-b-3xl;
 }
 
@@ -94,4 +149,4 @@
 
 .onboarding-option-btn {
   @apply w-full p-3 pl-5 rounded-xl border text-left border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600 transition-all duration-200 cursor-pointer;
-}
+}

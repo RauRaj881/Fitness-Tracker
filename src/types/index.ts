@@ -1,7 +1,8 @@
 // src/types/index.ts
 
 export interface UserData {
-  name: string;
+  username?: string;
+  name?: string;
   age: number;
   weight: number;
   height: number;

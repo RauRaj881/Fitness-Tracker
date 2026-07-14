@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useRef } from "react";
 import { useAppContext } from "../context/AppContext";
+import api from "../configs/api";
 import {
   Plus,
   Trash2,
@@ -16,20 +17,19 @@ import { FoodEntry } from "../types";
 import { toast } from "react-hot-toast";
 
 const FoodLog = () => {
-  // 1. Pulling functions from Context
   const { allFoodLogs, user, addFoodLog, deleteFoodLog } = useAppContext();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [isAdding, setIsAdding] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
 
-  // 2. Local state for the new meal form
   const [formData, setFormData] = useState({
     name: "",
     calories: "" as string | number,
     mealType: "breakfast" as FoodEntry["mealType"],
   });
 
-  // 3. Stats Calculation
   const stats = useMemo(() => {
     const totalConsumed = allFoodLogs.reduce(
       (acc, log) => acc + (Number(log.calories) || 0),
@@ -83,8 +83,6 @@ const FoodLog = () => {
     },
   ] as const;
 
-  // --- Handlers ---
-
   const openAddModal = (type: FoodEntry["mealType"] = "breakfast") => {
     setFormData({ ...formData, mealType: type });
     setIsAdding(true);
@@ -96,6 +94,7 @@ const FoodLog = () => {
       return;
     }
 
+    setIsSaving(true);
     try {
       await addFoodLog({
         name: formData.name,
@@ -105,55 +104,58 @@ const FoodLog = () => {
       });
       setIsAdding(false);
       setFormData({ name: "", calories: "", mealType: "breakfast" });
-      toast.success(`${formData.name} added!`);
     } catch (err) {
-      // Error is handled by context toast
+      // Error handled by context
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleAiClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    toast.loading("Scanning plate imagery...", { id: "ai-snap" });
+    setIsScanning(true);
+    const toastId = toast.loading("Analyzing image with AI...");
 
-    if (fileInputRef.current) fileInputRef.current.value = "";
+    try {
+      const formDataObj = new FormData();
+      formDataObj.append("image", file);
 
-    setTimeout(async () => {
-      const foodName = file.name ? file.name.split('.')[0] : "AI Scanned Meal";
-      const cals = Math.floor(Math.random() * 400) + 150;
+      const { data } = await api.post("/api/image-analysis", formDataObj, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
 
-      try {
-        await addFoodLog({
-          name: `AI: ${foodName}`,
-          calories: cals,
-          mealType: "lunch",
-          date: new Date().toISOString().split("T")[0],
+      if (data.success && data.result) {
+        setFormData({
+          name: data.result.name || "",
+          calories: data.result.calories || "",
+          mealType: formData.mealType || "breakfast",
         });
-        toast.success(`Logged: ${foodName} (~${cals} kcal)`, { id: "ai-snap" });
-      } catch (err) {
-        toast.error("AI scanning failed", { id: "ai-snap" });
+        setIsAdding(true);
+        toast.success("Food scanned successfully!", { id: toastId });
+      } else {
+        throw new Error("Invalid scan result");
       }
-    }, 1500);
+    } catch (error) {
+      toast.error("Failed to analyze image", { id: toastId });
+    } finally {
+      setIsScanning(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
   };
 
-
   return (
-    <div className="min-h-screen bg-[#0B1221] p-4 md:p-8 text-slate-200">
-      {/* --- HERO SECTION --- */}
+    <div className="themed-page p-4 md:p-8 transition-colors">
       <header className="max-w-6xl mx-auto mb-10">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
           >
-            <h1 className="text-4xl font-black text-white tracking-tight flex items-center gap-3">
+            <h1 className="text-4xl font-black tracking-tight flex items-center gap-3">
               Food Log <span className="text-[#10B981] text-2xl">⚡</span>
             </h1>
             <div className="flex items-center gap-2 mt-2 text-slate-400 font-medium">
@@ -171,12 +173,12 @@ const FoodLog = () => {
             </div>
           </motion.div>
 
-          <div className="bg-slate-900/50 p-4 rounded-3xl border border-slate-800 flex items-center gap-6 shadow-2xl">
-            <div className="text-center px-4 border-r border-slate-800">
+          <div className="themed-surface p-4 rounded-3xl border border-[var(--border-color)] flex items-center gap-6 shadow-2xl transition-colors">
+            <div className="text-center px-4 border-r border-[var(--border-color)] transition-colors">
               <p className="text-xs font-bold text-slate-500 uppercase">
                 Consumed
               </p>
-              <p className="text-2xl font-black text-white">
+              <p className="text-2xl font-black">
                 {stats.totalConsumed}
               </p>
             </div>
@@ -193,38 +195,32 @@ const FoodLog = () => {
           </div>
         </div>
 
-        {/* Dynamic Progress Bar */}
-        <div className="relative h-4 w-full bg-slate-800 rounded-full overflow-hidden border border-slate-700/50 p-1">
+        <div className="relative h-4 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden border border-slate-300 dark:border-slate-700/50 p-1 transition-colors">
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${stats.progress}%` }}
-            className={`h-full rounded-full ${
-              stats.remaining < 0
-                ? "bg-red-500"
-                : "bg-gradient-to-r from-[#10B981] to-[#34D399]"
-            }`}
+            className={`h-full rounded-full ${stats.remaining < 0 ? "bg-red-500" : "bg-gradient-to-r from-[#10B981] to-[#34D399]"}`}
           />
         </div>
       </header>
 
       <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* --- ACTIONS PANEL --- */}
         <aside className="lg:col-span-4 space-y-6">
           <div className="relative group">
             <Search
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-[#10B981] transition-colors"
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-[#10B981]"
               size={18}
             />
             <input
               type="text"
               placeholder="Filter your meals..."
-              className="w-full bg-[#111827] border border-slate-800 rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-[#10B981]/20 outline-none transition-all"
+              className="w-full bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800 rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-[#10B981]/20 outline-none transition-colors"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
 
-          <div className="bg-[#111827] p-6 rounded-3xl border border-slate-800 space-y-4">
+          <div className="themed-card p-6 rounded-3xl border border-[var(--border-color)] space-y-4 transition-colors">
             <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">
               Quick Entry
             </h3>
@@ -233,7 +229,7 @@ const FoodLog = () => {
                 <button
                   key={cat.id}
                   onClick={() => openAddModal(cat.id)}
-                  className="flex flex-col items-center justify-center p-4 bg-slate-900/50 hover:bg-slate-800 rounded-2xl border border-slate-800 transition-all hover:-translate-y-1"
+                  className="flex flex-col items-center justify-center p-4 bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-800 transition-all hover:-translate-y-1"
                 >
                   <span className="text-xl mb-1">{cat.emoji}</span>
                   <span className="text-[10px] font-bold uppercase text-slate-400">
@@ -249,24 +245,23 @@ const FoodLog = () => {
               <Plus size={20} strokeWidth={3} /> ADD FOOD
             </button>
             <button
-              onClick={handleAiClick}
-              className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-white py-4 rounded-2xl font-bold transition-all"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isScanning}
+              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white py-4 rounded-2xl font-black transition-all shadow-xl shadow-blue-500/20 disabled:opacity-75 disabled:cursor-not-allowed"
             >
-              <Zap size={18} className="text-yellow-400 fill-yellow-400" /> AI
-              SCAN
+              <Zap size={20} className={isScanning ? "animate-pulse" : ""} strokeWidth={3} />
+              {isScanning ? "SCANNING..." : "AI SCAN"}
             </button>
             <input
               type="file"
               accept="image/*"
               className="hidden"
               ref={fileInputRef}
-              onChange={handleImageUpload}
-              style={{ display: "none" }}
+              onChange={handleFileSelect}
             />
           </div>
         </aside>
 
-        {/* --- MEAL LOGS --- */}
         <main className="lg:col-span-8 space-y-6">
           <AnimatePresence mode="popLayout">
             {categories.map((cat, idx) => {
@@ -286,9 +281,9 @@ const FoodLog = () => {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: idx * 0.1 }}
-                  className="bg-[#111827] rounded-3xl border border-slate-800 overflow-hidden"
+                  className="themed-card rounded-3xl border border-[var(--border-color)] overflow-hidden transition-colors"
                 >
-                  <div className="px-6 py-4 flex justify-between items-center bg-slate-900/40">
+                  <div className="px-6 py-4 flex justify-between items-center bg-slate-50 dark:bg-slate-900/40 transition-colors">
                     <div className="flex items-center gap-4">
                       <div
                         className="p-2 rounded-xl"
@@ -301,15 +296,15 @@ const FoodLog = () => {
                     <p className="font-mono text-slate-400">{total} kcal</p>
                   </div>
 
-                  <div className="divide-y divide-slate-800/50">
+                  <div className="divide-y divide-slate-100 dark:divide-slate-800/50 transition-colors">
                     {items.length > 0 ? (
                       items.map((item) => (
                         <div
                           key={item.id}
-                          className="p-5 flex justify-between items-center group hover:bg-white/[0.02]"
+                          className="p-5 flex justify-between items-center group hover:bg-black/[0.02] dark:hover:bg-white/[0.02]"
                         >
                           <div className="flex flex-col">
-                            <span className="font-medium text-white">
+                            <span className="font-medium text-slate-900 dark:text-white">
                               {item.name}
                             </span>
                             <span className="text-[10px] text-slate-500 uppercase tracking-wider">
@@ -328,7 +323,7 @@ const FoodLog = () => {
                             </span>
                             <button
                               onClick={() => deleteFoodLog(item.id)}
-                              className="text-slate-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
+                              className="text-slate-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
                             >
                               <Trash2 size={16} />
                             </button>
@@ -348,15 +343,14 @@ const FoodLog = () => {
         </main>
       </div>
 
-      {/* --- ADD MODAL OVERLAY --- */}
       {isAdding && (
         <div className="fixed inset-0 bg-[#0B1221]/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
           <motion.div
             initial={{ scale: 0.95 }}
             animate={{ scale: 1 }}
-            className="bg-[#111827] border border-slate-800 p-8 rounded-[40px] w-full max-w-md shadow-2xl"
+            className="themed-card border border-[var(--border-color)] p-8 rounded-[40px] w-full max-w-md shadow-2xl transition-colors"
           >
-            <h2 className="text-2xl font-black mb-6 text-white">Log a Meal</h2>
+            <h2 className="text-2xl font-black mb-6 text-slate-900 dark:text-white">Log a Meal</h2>
             <div className="space-y-4">
               <input
                 type="text"
@@ -365,7 +359,7 @@ const FoodLog = () => {
                 onChange={(e) =>
                   setFormData({ ...formData, name: e.target.value })
                 }
-                className="w-full bg-slate-900/50 border border-slate-700 rounded-2xl p-4 outline-none focus:border-[#10B981]"
+                className="w-full bg-slate-900/50 border border-slate-700 rounded-2xl p-4 outline-none focus:border-[#10B981] text-white"
               />
               <input
                 type="number"
@@ -374,7 +368,7 @@ const FoodLog = () => {
                 onChange={(e) =>
                   setFormData({ ...formData, calories: e.target.value })
                 }
-                className="w-full bg-slate-900/50 border border-slate-700 rounded-2xl p-4 outline-none focus:border-[#10B981]"
+                className="w-full bg-slate-900/50 border border-slate-700 rounded-2xl p-4 outline-none focus:border-[#10B981] text-white"
               />
               <select
                 value={formData.mealType}
@@ -399,7 +393,7 @@ const FoodLog = () => {
                   onClick={handleSave}
                   className="flex-1 py-4 bg-[#10B981] text-[#0B1221] rounded-2xl font-black"
                 >
-                  Save
+                  {isSaving ? "Saving..." : "Save"}
                 </button>
               </div>
             </div>

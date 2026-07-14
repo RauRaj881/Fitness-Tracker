@@ -6,15 +6,14 @@ import {
   type Credentials,
 } from "../types";
 import { useNavigate } from "react-router-dom";
-import mockApi from "../assets/mockApi";
+import api from "../configs/api";
 import { toast } from "react-hot-toast";
-
 
 interface AppContextType {
   user: User | null;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
   isUserFetched: boolean;
-  fetchUser: (token: string) => Promise<void>;
+  fetchUser: (token: string) => Promise<any>;
   signup: (credentials: Credentials) => Promise<void>;
   login: (credentials: Credentials) => Promise<void>;
   logout: () => void;
@@ -22,14 +21,11 @@ interface AppContextType {
   setOnboardingCompleted: React.Dispatch<React.SetStateAction<boolean>>;
   allFoodLogs: FoodEntry[];
   allActivityLogs: ActivityEntry[];
-  // Methods
-  addFoodLog: (
-    entry: Omit<FoodEntry, "id" | "documentId" | "createdAt">,
-  ) => Promise<void>;
-  deleteFoodLog: (id: string) => Promise<void>;
-  addActivityLog: (
-    entry: Omit<ActivityEntry, "id" | "documentId" | "createdAt">,
-  ) => Promise<void>;
+  setAllActivityLogs: React.Dispatch<React.SetStateAction<ActivityEntry[]>>;
+  addFoodLog: (entry: any) => Promise<void>;
+  deleteFoodLog: (id: string | number) => Promise<void>;
+  addActivityLog: (entry: any) => Promise<void>;
+  deleteActivityLog: (id: string | number) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -42,106 +38,192 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const [allFoodLogs, setAllFoodLogs] = useState<FoodEntry[]>([]);
   const [allActivityLogs, setAllActivityLogs] = useState<ActivityEntry[]>([]);
 
-  // --- Auth & Initial Fetching ---
-  const signup = async (credentials: Credentials) => {
-    const { data } = await mockApi.auth.register(credentials);
-    setUser(data.user);
-    if (data?.user?.age && data?.user?.weight && data?.user?.goal)
+  // Helper: Checks if user has filled profile info (Age, Weight, Goal)
+  const checkOnboarding = (userData: any) => {
+    if (userData?.age && userData?.weight && userData?.goal) {
       setOnboardingCompleted(true);
-    localStorage.setItem("token", data.jwt);
-  };
-
-  const login = async (credentials: Credentials) => {
-    const { data } = await mockApi.auth.login(credentials);
-    setUser({ ...data.user, token: data.jwt });
-    if (data?.user?.age && data?.user?.weight && data?.user?.goal)
-      setOnboardingCompleted(true);
-    localStorage.setItem("token", data.jwt);
-  };
-
-  const logout = () => {
-    localStorage.removeItem("token");
-    setUser(null);
-    setOnboardingCompleted(false);
-    navigate("/");
-  };
-
-  const fetchUser = async (token: string) => {
-    const { data } = await mockApi.user.me();
-    setUser({ ...data, token });
-    if (data?.age && data?.weight && data?.goal) setOnboardingCompleted(true);
-    setIsUserFetched(true);
-  };
-
-  const fetchFoodLogs = async () => {
-    const { data } = await mockApi.foodLogs.list();
-    setAllFoodLogs(data);
-  };
-
-  const fetchActivityLogs = async () => {
-    const { data } = await mockApi.activityLogs.list();
-    setAllActivityLogs(data);
-  };
-
-  // --- Food & Activity Operations ---
-
-  const addFoodLog = async (
-    entry: Omit<FoodEntry, "id" | "documentId" | "createdAt">,
-  ) => {
-    try {
-      const { data } = await mockApi.foodLogs.create({ data: entry });
-      setAllFoodLogs((prev) => [data, ...prev]);
-    } catch (error) {
-      toast.error("Failed to add food");
-      throw error;
     }
   };
 
-  const deleteFoodLog = async (id: string) => {
+  // --- Auth Section ---
+  const signup = async (credentials: Credentials) => {
     try {
-      await mockApi.foodLogs.delete(id);
-      setAllFoodLogs((prev) => prev.filter((item) => item.id !== id));
+      const { data } = await api.post("/api/auth/local/register", credentials);
+      localStorage.setItem("token", data.jwt);
+      api.defaults.headers.common["Authorization"] = `Bearer ${data.jwt}`;
+
+      setUser({ ...data.user, token: data.jwt });
+      checkOnboarding(data.user);
+      toast.success("Registration Successful!");
+      navigate("/");
+    } catch (error: any) {
+      toast.error(
+        error?.response?.data?.error?.message || "Registration failed",
+      );
+    }
+  };
+
+  const login = async (credentials: Credentials) => {
+    try {
+      const { data } = await api.post("/api/auth/local", {
+        identifier: credentials.email,
+        password: credentials.password,
+      });
+
+      localStorage.setItem("token", data.jwt);
+      api.defaults.headers.common["Authorization"] = `Bearer ${data.jwt}`;
+
+      setUser({ ...data.user, token: data.jwt });
+      checkOnboarding(data.user);
+
+      // Load user data immediately
+      await Promise.all([
+        fetchFoodLogs(data.user.id),
+        fetchActivityLogs(data.user.id),
+      ]);
+      toast.success("Welcome back!");
+      navigate("/");
+    } catch (error: any) {
+      toast.error(
+        error?.response?.data?.error?.message || "Invalid Credentials",
+      );
+    }
+  };
+
+  const fetchUser = async (token: string) => {
+    try {
+      api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      const { data } = await api.get("/api/users/me");
+      setUser({ ...data, token });
+      checkOnboarding(data);
+      return data;
+    } catch (error) {
+      logout(); // Token expired or invalid
+    } finally {
+      setIsUserFetched(true);
+    }
+  };
+
+  const logout = () => {
+    localStorage.clear();
+    // This wipes the React memory and takes them to the root page safely
+    window.location.href = "/";
+  };
+
+  // --- Data Fetching ---
+  const fetchFoodLogs = async (userId?: string | number) => {
+    const id = userId || user?.id;
+    if (!id) return;
+    try {
+      const { data } = await api.get(
+        `/api/food-logs?populate=*&filters[users_permissions_user][id][$eq]=${id}`,
+      );
+      setAllFoodLogs(data.data || []);
+    } catch (error) {
+      console.error("Fetch Food Error:", error);
+    }
+  };
+
+  const fetchActivityLogs = async (userId?: string | number) => {
+    const id = userId || user?.id;
+    if (!id) return;
+    try {
+      const { data } = await api.get(
+        `/api/activity-logs?populate=*&filters[users_permissions_user][id][$eq]=${id}`,
+      );
+      setAllActivityLogs(data.data || []);
+    } catch (error) {
+      console.error("Fetch Activity Error:", error);
+    }
+  };
+
+  const addFoodLog = async (entry: any) => {
+    try {
+      const payload = {
+        data: {
+          name: String(entry.name),
+          calories: Number(entry.calories),
+          mealType: entry.mealType,
+          users_permissions_user: user?.id,
+          publishedAt: new Date(),
+        },
+      };
+      const response = await api.post("/api/food-logs", payload);
+
+      if (response.data?.data) {
+        const newEntry = response.data.data;
+        setAllFoodLogs((prev) => [newEntry, ...prev]);
+        toast.success("Food Logged! 🍎");
+      }
+    } catch (error: any) {
+      const strapiMessage = error.response?.data?.error?.message;
+      toast.error(strapiMessage || "Failed to add food");
+    }
+  };
+
+  const addActivityLog = async (entry: any) => {
+    try {
+      const payload = {
+        data: {
+          name: String(entry.name),
+          duration: Number(entry.duration),
+          calories: Number(entry.calories),
+          users_permissions_user: user?.id,
+          publishedAt: new Date(),
+        },
+      };
+
+      const response = await api.post("/api/activity-logs", payload);
+
+      if (response.data?.data) {
+        const newEntry = response.data.data;
+        setAllActivityLogs((prev) => [newEntry, ...prev]);
+        toast.success("Activity Tracked! 🔥");
+      }
+    } catch (error: any) {
+      console.error(
+        "Activity Post Error:",
+        error.response?.data || error.message,
+      );
+      toast.error("Failed to add activity. Check console.");
+    }
+  };
+
+  const deleteFoodLog = async (id: string | number) => {
+    try {
+      await api.delete(`/api/food-logs/${id}`);
+      setAllFoodLogs((prev) => prev.filter((item: any) => item.documentId !== id && item.id !== id));
+      toast.success("Food entry removed");
+    } catch (error) {
+      console.error("Delete Food Error:", error);
+      toast.error("Failed to delete entry");
+    }
+  };
+
+  const deleteActivityLog = async (id: string | number) => {
+    try {
+      await api.delete(`/api/activity-logs/${id}`);
+      setAllActivityLogs((prev) => prev.filter((item: any) => item.documentId !== id && item.id !== id));
+      toast.success("Activity Deleted");
     } catch (error) {
       toast.error("Delete failed");
     }
   };
 
-  const addActivityLog = async (
-    entry: Omit<ActivityEntry, "id" | "documentId" | "createdAt">,
-  ) => {
-    try {
-      const response = await mockApi.activityLogs.create({ data: entry });
-      
-      if (response.status !== 200 && response.status !== 201) {
-        throw new Error(`Invalid status code returned: ${response.status}`);
-      }
-
-      setAllActivityLogs((prev) => [response.data, ...prev]);
-    } catch (error) {
-      toast.error("Failed to add activity");
-      throw error;
-    }
-  };
-
-  // Initial Load
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
-      (async () => {
-        try {
-          await fetchUser(token);
-          await fetchFoodLogs();
-          await fetchActivityLogs();
-        } catch (error) {
-          setIsUserFetched(true);
+      fetchUser(token).then((userData) => {
+        if (userData?.id) {
+          fetchFoodLogs(userData.id);
+          fetchActivityLogs(userData.id);
         }
-      })();
+      });
     } else {
       setIsUserFetched(true);
     }
   }, []);
 
-  // Ensure this object matches AppContextType exactly
   const value: AppContextType = {
     user,
     setUser,
@@ -154,13 +236,17 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     setOnboardingCompleted,
     allFoodLogs,
     allActivityLogs,
+    setAllActivityLogs,
     addFoodLog,
     deleteFoodLog,
-    addActivityLog, // <--- Fixed: This was likely missing from your value object
+    addActivityLog,
+    deleteActivityLog,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
+
+export default AppProvider;
 
 export const useAppContext = () => {
   const context = useContext(AppContext);

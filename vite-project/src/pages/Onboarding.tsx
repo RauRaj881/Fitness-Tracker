@@ -100,8 +100,7 @@ const Onboarding = () => {
     <>
       <Toaster />
 
-      <div className="min-h-screen bg-linear
-      -to-br from-[#0f172a] to-[#020617] text-white flex flex-col">
+      <div className="min-h-screen bg-linear-to-br from-[#0f172a] to-[#020617] text-white flex flex-col">
         {/* Header */}
         <div className="p-6 pt-12">
           <div className="flex items-center gap-3 mb-2">

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
@@ -9,34 +9,12 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
-
-interface Activity {
-  id: string;
-  name: string;
-  duration: number;
-  caloriesBurned: number;
-  time: string;
-}
+import { useAppContext } from "../context/AppContext";
 
 const ActivityLog = () => {
   // --- STATE ---
   const [isAdding, setIsAdding] = useState(false);
-  const [activities, setActivities] = useState<Activity[]>([
-    {
-      id: "1",
-      name: "Yoga",
-      duration: 30,
-      caloriesBurned: 120,
-      time: "08:09 PM",
-    },
-    {
-      id: "2",
-      name: "Weight Training",
-      duration: 30,
-      caloriesBurned: 180,
-      time: "08:09 PM",
-    },
-  ]);
+  const { allActivityLogs, addActivityLog, deleteActivityLog } = useAppContext();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -55,53 +33,52 @@ const ActivityLog = () => {
   ];
 
   // --- LOGIC ---
-  const totalMinutes = activities.reduce((acc, curr) => acc + curr.duration, 0);
+  const totalMinutes = allActivityLogs.reduce(
+    (acc, curr) => acc + curr.duration,
+    0,
+  );
+  const totalCaloriesBurned = allActivityLogs.reduce(
+    (acc, curr) => acc + curr.calories,
+    0,
+  );
 
-    const handleQuickAdd = (item: (typeof quickAddItems)[0]) => {
-        const newEntry: Activity = {
-            id: Date.now().toString(),
-            name: item.name,
-            duration: 30, // Default to 30 mins
-            caloriesBurned: item.defaultCal,
-            time: new Date().toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-            }),
-        };
-        setActivities([newEntry, ...activities]);
-        toast.success(`${item.name} added!`);
-    };
+  const handleQuickAdd = async (item: (typeof quickAddItems)[0]) => {
+    try {
+      await addActivityLog({
+        name: item.name,
+        duration: 30,
+        calories: item.defaultCal,
+        date: new Date().toISOString().split("T")[0],
+      });
+      toast.success(`${item.name} added!`);
+    } catch {
+      // error already handled in context
+    }
+  };
 
-  const handleManualSave = () => {
+  const handleManualSave = async () => {
     if (!formData.name || !formData.duration || !formData.caloriesBurned) {
       toast.error("Please fill all required fields");
       return;
     }
 
-    const newEntry: Activity = {
-      id: Date.now().toString(),
-      name: formData.name,
-      duration: Number(formData.duration),
-      caloriesBurned: Number(formData.caloriesBurned),
-      time: new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-    };
-
-    setActivities([newEntry, ...activities]);
-    setFormData({ name: "", duration: "", caloriesBurned: "" });
-    setIsAdding(false);
-    toast.success("Activity logged! 🚀");
-  };
-
-  const deleteActivity = (id: string) => {
-    setActivities(activities.filter((a) => a.id !== id));
-    toast.error("Activity removed");
+    try {
+      await addActivityLog({
+        name: formData.name,
+        duration: Number(formData.duration),
+        calories: Number(formData.caloriesBurned),
+        date: new Date().toISOString().split("T")[0],
+      });
+      setFormData({ name: "", duration: "", caloriesBurned: "" });
+      setIsAdding(false);
+      toast.success("Activity logged! 🚀");
+    } catch {
+      // error already handled in context
+    }
   };
 
   return (
-    <div className="min-h-screen bg-[#0B1221] p-4 md:p-8 text-white">
+    <div className="themed-page p-4 md:p-8">
       {/* --- HEADER --- */}
       <header className="max-w-6xl mx-auto mb-10 flex justify-between items-end">
         <motion.div
@@ -116,15 +93,16 @@ const ActivityLog = () => {
           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">
             Active Today
           </p>
-          <p className="text-3xl font-black text-blue-400">
-            {totalMinutes} min
+          <p className="text-3xl font-black text-blue-400">{totalMinutes} min</p>
+          <p className="text-xs text-slate-500 mt-0.5">
+            {totalCaloriesBurned} kcal burned
           </p>
         </div>
       </header>
 
       <main className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* --- LEFT: QUICK ADD --- */}
-        <section className="bg-[#111827] border border-slate-800 p-8 rounded-[40px] shadow-xl h-fit">
+        <section className="themed-card border border-[var(--border-color)] p-8 rounded-[40px] shadow-xl h-fit">
           <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
             Quick Add <Zap size={18} className="text-yellow-400" />
           </h3>
@@ -134,7 +112,7 @@ const ActivityLog = () => {
               <button
                 key={item.name}
                 onClick={() => handleQuickAdd(item)}
-                className="bg-slate-800/40 hover:bg-slate-700 border border-slate-700/50 py-3 px-4 rounded-2xl text-sm font-semibold flex items-center gap-2 transition-all active:scale-95"
+                className="bg-slate-800/40 hover:bg-slate-700 border border-slate-700/50 py-3 px-4 rounded-2xl text-sm font-semibold flex items-center gap-2 transition-all active:scale-95 text-white"
               >
                 <span>{item.emoji}</span> {item.name}
               </button>
@@ -143,14 +121,14 @@ const ActivityLog = () => {
 
           <button
             onClick={() => setIsAdding(true)}
-            className="w-full bg-[#10B981] hover:bg-[#0ea673] text-[#0B1221] py-4 rounded-2xl font-black flex items-center justify-center gap-2 transition-all shadow-lg shadow-[#10B981]/10"
+            className="w-full bg-[#10B981] hover:bg-[#0ea673] text-[#0B1221] py-4 rounded-2xl font-black flex items-center justify-center gap-2 transition-all shadow-lg shadow-[#10B981]/10 cursor-pointer"
           >
             <Plus size={20} /> Add Custom Activity
           </button>
         </section>
 
         {/* --- RIGHT: LIST --- */}
-        <section className="bg-[#111827] border border-slate-800 p-8 rounded-[40px] shadow-xl flex flex-col min-h-[400px]">
+        <section className="themed-card border border-[var(--border-color)] p-8 rounded-[40px] shadow-xl flex flex-col min-h-[400px]">
           <div className="flex items-center gap-4 mb-8">
             <div className="bg-blue-500/10 p-3 rounded-2xl text-blue-400">
               <ActivityIcon size={24} />
@@ -158,15 +136,15 @@ const ActivityLog = () => {
             <div>
               <h3 className="text-lg font-bold">Today's Activities</h3>
               <p className="text-slate-500 text-sm font-medium">
-                {activities.length} logged
+                {allActivityLogs.length} logged
               </p>
             </div>
           </div>
 
           <div className="space-y-4 flex-grow">
             <AnimatePresence mode="popLayout">
-              {activities.length > 0 ? (
-                activities.map((activity) => (
+              {allActivityLogs.length > 0 ? (
+                allActivityLogs.map((activity) => (
                   <motion.div
                     key={activity.id}
                     layout
@@ -180,24 +158,21 @@ const ActivityLog = () => {
                         <Timer size={20} />
                       </div>
                       <div>
-                        <p className="font-bold text-white">{activity.name}</p>
-                        <p className="text-xs text-slate-500">
-                          {activity.time}
-                        </p>
+                        <p className="font-bold text-slate-900 dark:text-white">{activity.name}</p>
+                        <p className="text-xs text-slate-500">{activity.date || (activity.createdAt && new Date(activity.createdAt).toLocaleDateString()) || new Date().toLocaleDateString()}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-4">
                       <div className="text-right">
-                        <p className="font-black text-white">
-                          {activity.duration} min
-                        </p>
+                        <p className="font-black text-slate-900 dark:text-white">{activity.duration} min</p>
                         <p className="text-[10px] text-slate-500 font-bold uppercase">
-                          {activity.caloriesBurned} kcal
+                          {activity.calories} kcal
                         </p>
                       </div>
                       <button
-                        onClick={() => deleteActivity(activity.id)}
-                        className="text-slate-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
+                        onClick={() => deleteActivityLog(activity.documentId)}
+                        className="text-slate-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all active:scale-90"
+                        title="Delete activity"
                       >
                         <Trash2 size={18} />
                       </button>
@@ -231,11 +206,15 @@ const ActivityLog = () => {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-[#111827] border border-slate-800 p-8 rounded-[40px] w-full max-w-md shadow-2xl relative"
+              className="themed-card border border-[var(--border-color)] p-8 rounded-[40px] w-full max-w-md shadow-2xl relative transition-colors"
             >
-              <h2 className="text-2xl font-black mb-6 text-white">
-                New Activity
-              </h2>
+              <button
+                onClick={() => setIsAdding(false)}
+                className="absolute top-6 right-6 text-slate-500 hover:text-white transition-colors cursor-pointer"
+              >
+                <X size={20} />
+              </button>
+              <h2 className="text-2xl font-black mb-6 text-slate-900 dark:text-white">New Activity</h2>
 
               <div className="space-y-6">
                 <div>
@@ -245,7 +224,7 @@ const ActivityLog = () => {
                   <input
                     type="text"
                     placeholder="e.g., Morning Run"
-                    className="w-full bg-slate-900/50 border border-slate-800 rounded-2xl p-4 outline-none focus:border-[#10B981] text-white"
+                    className="w-full bg-slate-100 dark:bg-slate-900/50 border border-[var(--border-color)] rounded-2xl p-4 outline-none focus:border-[#10B981] text-slate-900 dark:text-white transition-colors"
                     value={formData.name}
                     onChange={(e) =>
                       setFormData({ ...formData, name: e.target.value })
@@ -260,7 +239,7 @@ const ActivityLog = () => {
                     </label>
                     <input
                       type="number"
-                      className="w-full bg-slate-900/50 border border-slate-800 rounded-2xl p-4 outline-none focus:border-[#10B981] text-white"
+                      className="w-full bg-slate-100 dark:bg-slate-900/50 border border-[var(--border-color)] rounded-2xl p-4 outline-none focus:border-[#10B981] text-slate-900 dark:text-white transition-colors"
                       value={formData.duration}
                       onChange={(e) =>
                         setFormData({ ...formData, duration: e.target.value })
@@ -273,7 +252,7 @@ const ActivityLog = () => {
                     </label>
                     <input
                       type="number"
-                      className="w-full bg-slate-900/50 border border-slate-800 rounded-2xl p-4 outline-none focus:border-[#10B981] text-white"
+                      className="w-full bg-slate-100 dark:bg-slate-900/50 border border-[var(--border-color)] rounded-2xl p-4 outline-none focus:border-[#10B981] text-slate-900 dark:text-white transition-colors"
                       value={formData.caloriesBurned}
                       onChange={(e) =>
                         setFormData({
