@@ -48,3 +48,4 @@ Navigate to the server directory, install dependencies, and configure your envir
 ```bash
 cd server
 npm install
+
