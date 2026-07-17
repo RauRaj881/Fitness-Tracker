@@ -1,16 +1,52 @@
-# React + Vite
+# AI-Powered Fitness & Nutrition Tracker 🏋️‍♂️🥗
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A full-stack web application designed to help users track their daily fitness metrics while leveraging artificial intelligence to analyze food imagery for instant nutritional breakdowns. 
 
-Currently, two official plugins are available:
+## ✨ Key Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+* **AI Food Analysis:** Upload an image of your meal, and the application uses Google Gemini AI to estimate the calories and macronutrient breakdown.
+* **Interactive Dashboards:** Visualizes BMI, weekly workout progression, and daily caloric trends using Recharts.
+* **Secure User Authentication:** Protected routes and session management utilizing JWT.
+* **Personalized Tracking:** Users can log their daily workouts and meals, backed by a fast and lightweight SQLite database.
 
-## React Compiler
+## 🛠️ Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+* **Frontend:** React.js, TypeScript, Tailwind CSS, Recharts, Vite
+* **Backend:** Node.js, Strapi (Headless CMS)
+* **Database:** SQLite
+* **AI Integration:** Google Gemini AI API
 
-## Expanding the ESLint configuration
+## 📂 Project Structure
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+This repository is a monorepo containing both the frontend client and the backend server:
+
+* `/server`: The Strapi backend and SQLite database configurations.
+* `/vite-project`: The React.js frontend built with Vite.
+
+## 📸 Screenshots
+
+### Interactive Analytics Dashboard
+![Dashboard Top](./screenshot/dashboard-top.png)
+![Dashboard Bottom](./screenshot/dashboard-bottom.png)
+
+### AI-Powered Food Logging
+![Food Log Top](./screenshot/food-log-top.png)
+![AI Scan Feature](./screenshot/food-log-ai.png)
+
+## 🚀 Getting Started
+
+Follow these instructions to set up both the backend and frontend locally on your machine.
+
+### Prerequisites
+* Node.js (v18 or higher)
+* npm or yarn
+
+### 1. Backend Setup (Strapi Server)
+
+Navigate to the server directory, install dependencies, and configure your environment.
+
+```bash
+cd server
+npm install
+
+
